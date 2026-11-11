@@ -475,12 +475,13 @@ export default function LivingSceneCanvas({
         walker.facing === -1 ? drawBoyX + (96 - 80) : drawBoyX + 80;
       const boyMugY = drawBoyY + 48;
 
-      // (2C) 計算爐火有機搖曳強度 (結合慢速柴火呼吸 + 中速火舌跳動 + 快速微閃)
-      const slowWave = Math.sin(now * 0.0019) * 0.5 + 0.5;
-      const midWave = Math.sin(now * 0.0058 + 1.2) * 0.5 + 0.5;
-      const fastWave = Math.sin(now * 0.0145 + 2.7) * 0.5 + 0.5;
-      const rawPulse = slowWave * 0.52 + midWave * 0.33 + fastWave * 0.15; // 0.0 (微暗) ~ 1.0 (旺盛)
-      const firePulse = isFireBoosted ? Math.min(1.35, rawPulse + 0.45) : rawPulse;
+      // (2C) 計算爐火有機搖曳強度 (結合慢速柴火呼吸 + 中速火舌跳動 + 快速微閃，並拉伸對比度讓波谷與波峰完整達到 0.0 ~ 1.0)
+      const slowWave = Math.sin(now * 0.0021) * 0.5 + 0.5;
+      const midWave = Math.sin(now * 0.0062 + 1.2) * 0.5 + 0.5;
+      const fastWave = Math.sin(now * 0.015 + 2.7) * 0.5 + 0.5;
+      const rawMix = slowWave * 0.56 + midWave * 0.30 + fastWave * 0.14;
+      const stretchedPulse = Math.max(0, Math.min(1, (rawMix - 0.15) / 0.70)); // 完整擺動於 0.0 (最暗) ~ 1.0 (原圖最亮)
+      const firePulse = isFireBoosted ? 1.0 : stretchedPulse;
       const flameSwayX = Math.sin(now * 0.0062) * 6;
 
       // (2D) 壁爐像素火焰緩緩燃燒 (火焰高度與爐火強度 firePulse 100% 同步起伏！)
@@ -546,22 +547,22 @@ export default function LivingSceneCanvas({
       }
 
       // (2E) 隨爐火搖曳的「單純變暗 ⟷ 變回原圖原本狀態」明暗變化
-      // 不疊加任何額外亮光光暈（保留原圖 100% 乾淨飽和色彩），僅在火勢微斂時柔和變暗，火旺時回到原圖狀態 (alpha = 0)
-      const dimAmount = isFireBoosted ? 0 : (1 - firePulse) * 0.22;
+      // 不疊加任何額外亮光光暈（保留原圖 100% 乾淨飽和色彩），在火勢微斂時加深變暗程度 (最高達 0.42)，火旺時回到原圖狀態 (alpha = 0)
+      const dimAmount = isFireBoosted ? 0 : (1 - firePulse) * 0.42;
       if (dimAmount > 0.005) {
         const lightCenterX = 176 + flameSwayX;
         const lightCenterY = 396;
         const roomShadowGrad = fCtx.createRadialGradient(
           lightCenterX,
           lightCenterY,
-          70,
+          45,
           lightCenterX,
           lightCenterY,
-          560
+          460
         );
-        roomShadowGrad.addColorStop(0, `rgba(10, 4, 1, ${(dimAmount * 0.25).toFixed(3)})`);
-        roomShadowGrad.addColorStop(0.35, `rgba(10, 4, 1, ${(dimAmount * 0.65).toFixed(3)})`);
-        roomShadowGrad.addColorStop(1, `rgba(8, 3, 1, ${dimAmount.toFixed(3)})`);
+        roomShadowGrad.addColorStop(0, `rgba(8, 3, 1, ${(dimAmount * 0.35).toFixed(3)})`);
+        roomShadowGrad.addColorStop(0.28, `rgba(8, 3, 1, ${(dimAmount * 0.80).toFixed(3)})`);
+        roomShadowGrad.addColorStop(1, `rgba(6, 2, 0, ${dimAmount.toFixed(3)})`);
         fCtx.fillStyle = roomShadowGrad;
         fCtx.fillRect(0, 0, 1024, 576);
       }
