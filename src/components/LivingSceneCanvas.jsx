@@ -149,12 +149,14 @@ export default function LivingSceneCanvas({
     boySprites.sip.src = './assets/boy_sip.png';
     boySprites.lookBack.src = './assets/boy_look_back.png';
 
-    // 2. 載入火爐旁左邊女生的三態動作圖 (繪製於 x=60, y=332)
+    // 2. 載入火爐旁左邊女生的背景火膛底圖與三態前景動作圖 (繪製於 x=60, y=332)
     const girlSprites = {
+      bgClean: new Image(),
       talk: new Image(),
       handDown: new Image(),
       drink: new Image()
     };
+    girlSprites.bgClean.src = './assets/girl_bg_clean.png';
     girlSprites.talk.src = './assets/girl_talk.png';
     girlSprites.handDown.src = './assets/girl_hand_down.png';
     girlSprites.drink.src = './assets/girl_drink.png';
@@ -379,8 +381,9 @@ export default function LivingSceneCanvas({
           ? boy1Sprites.handDown
           : boy1Sprites.talk;
 
-      if (currentGirlImg && currentGirlImg.complete && currentGirlImg.naturalWidth > 0) {
-        fCtx.drawImage(currentGirlImg, 60, 332);
+      // 先繪製已移除舉起手掌的乾淨壁爐火膛底圖，讓動態火焰在手掌【背後】燃燒
+      if (girlSprites.bgClean && girlSprites.bgClean.complete && girlSprites.bgClean.naturalWidth > 0) {
+        fCtx.drawImage(girlSprites.bgClean, 60, 332);
       }
       if (currentBoy1Img && currentBoy1Img.complete && currentBoy1Img.naturalWidth > 0) {
         fCtx.drawImage(currentBoy1Img, 228, 316);
@@ -388,7 +391,7 @@ export default function LivingSceneCanvas({
 
       // 計算火爐旁兩位角色當前馬克杯口的即時座標（隨舉杯喝飲料或手放下同步升降！）
       const girlMugOrigin =
-        girlAction === 'DRINK' ? { x: 120, y: 365 } : { x: 122, y: 377 };
+        girlAction === 'DRINK' ? { x: 120, y: 369 } : { x: 122, y: 377 };
       const boy1MugOrigin =
         boy1Action === 'DRINK'
           ? { x: 294, y: 356 }
@@ -561,6 +564,11 @@ export default function LivingSceneCanvas({
         fCtx.fillStyle = `rgba(255, 220, 90, ${alpha.toFixed(2)})`;
         fCtx.fillRect(Math.round(ex), Math.round(ey), 2, 2);
       });
+
+      // 在壁爐火焰與火星繪製完畢後，將左邊女生的 100% 實心前景圖層疊加在火焰最上方，確保手勢放下或抬起都絕不被火擋住！
+      if (currentGirlImg && currentGirlImg.complete && currentGirlImg.naturalWidth > 0) {
+        fCtx.drawImage(currentGirlImg, 60, 332);
+      }
 
       // (2E) 三杯熱可可的冉冉像素白煙 (即時跟隨三位角色手中杯口的最新位置！)
       steamParticles.forEach((sp) => {
