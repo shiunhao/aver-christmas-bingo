@@ -475,24 +475,17 @@ export default function LivingSceneCanvas({
         walker.facing === -1 ? drawBoyX + (96 - 80) : drawBoyX + 80;
       const boyMugY = drawBoyY + 48;
 
-      // (2C) 壁爐地面與室內柔和呼吸暖光
-      const flicker =
-        0.85 +
-        0.12 * Math.sin(now * 0.0055) +
-        0.08 * Math.sin(now * 0.013) +
-        (isFireBoosted ? 0.35 : 0);
+      // (2C) 計算爐火有機搖曳強度 (結合慢速柴火呼吸 + 中速火舌跳動 + 快速微閃)
+      const slowWave = Math.sin(now * 0.0019) * 0.5 + 0.5;
+      const midWave = Math.sin(now * 0.0058 + 1.2) * 0.5 + 0.5;
+      const fastWave = Math.sin(now * 0.0145 + 2.7) * 0.5 + 0.5;
+      const rawPulse = slowWave * 0.52 + midWave * 0.33 + fastWave * 0.15; // 0.0 (微暗) ~ 1.0 (旺盛)
+      const firePulse = isFireBoosted ? Math.min(1.35, rawPulse + 0.45) : rawPulse;
+      const flameSwayX = Math.sin(now * 0.0062) * 6;
 
-      const hearthGrad = fCtx.createRadialGradient(172, 412, 8, 172, 425, 165);
-      hearthGrad.addColorStop(0, `rgba(255, 165, 60, ${(0.22 * flicker).toFixed(3)})`);
-      hearthGrad.addColorStop(0.5, `rgba(255, 110, 30, ${(0.1 * flicker).toFixed(3)})`);
-      hearthGrad.addColorStop(1, 'rgba(255, 80, 10, 0)');
-      fCtx.fillStyle = hearthGrad;
-      fCtx.fillRect(10, 280, 350, 290);
-
-      // (2D) 壁爐像素火焰緩緩燃燒
-      // 當女生左手抬起 (girlAction !== 'DOWN') 時，保護高處手掌不被火焰遮蓋；當左手放下時，保護放下後的手掌位置
+      // (2D) 壁爐像素火焰緩緩燃燒 (火焰高度與爐火強度 firePulse 100% 同步起伏！)
       const isGirlHandUp = girlAction !== 'DOWN';
-      const fireSpeedMult = isFireBoosted ? 1.65 : 1.0;
+      const fireSpeedMult = (isFireBoosted ? 1.65 : 1.0) * (0.85 + firePulse * 0.3);
       fireParticles.forEach((fp) => {
         fp.life += fp.speed * fireSpeedMult;
         if (fp.life >= 1) {
@@ -501,7 +494,8 @@ export default function LivingSceneCanvas({
         }
         const p = fp.life;
         const distFromCenter = Math.abs(fp.baseX - 170) / 28;
-        const maxRise = (isFireBoosted ? 58 : 42) * (1 - distFromCenter * 0.45);
+        const baseRise = isFireBoosted ? 58 : 34 + firePulse * 16;
+        const maxRise = baseRise * (1 - distFromCenter * 0.45);
         const curY = 418 - p * maxRise;
         const wave = Math.sin(now * 0.006 + fp.phase + p * 4) * (3.5 * p);
         const curX = fp.baseX + wave;
@@ -516,11 +510,11 @@ export default function LivingSceneCanvas({
         const gy = Math.round(curY / 3) * 3;
 
         if (p < 0.25) {
-          fCtx.fillStyle = 'rgba(255, 250, 210, 0.92)';
+          fCtx.fillStyle = 'rgba(255, 250, 210, 0.94)';
         } else if (p < 0.55) {
-          fCtx.fillStyle = 'rgba(255, 200, 55, 0.88)';
+          fCtx.fillStyle = 'rgba(255, 200, 55, 0.90)';
         } else if (p < 0.82) {
-          fCtx.fillStyle = 'rgba(255, 105, 25, 0.82)';
+          fCtx.fillStyle = 'rgba(255, 105, 25, 0.84)';
         } else {
           fCtx.fillStyle = `rgba(210, 45, 10, ${((1 - p) * 3.2).toFixed(2)})`;
         }
@@ -536,7 +530,7 @@ export default function LivingSceneCanvas({
           em.x = 146 + Math.random() * 48;
           em.y = 412;
         }
-        const ey = 412 - em.life * (isFireBoosted ? 75 : 54);
+        const ey = 412 - em.life * (isFireBoosted ? 75 : 46 + firePulse * 16);
         const ex = em.x + Math.sin(now * 0.008 + em.life * 6) * 5;
         if (isGirlHandUp && ex < 161 && ey < 392 && ey > 368) return;
         if (!isGirlHandUp && ex < 161 && ey >= 378 && ey < 412) return;
@@ -550,6 +544,58 @@ export default function LivingSceneCanvas({
       if (currentGirlImg && currentGirlImg.complete && currentGirlImg.naturalWidth > 0) {
         fCtx.drawImage(currentGirlImg, 60, 332);
       }
+
+      // (2E) 隨爐火搖曳的全畫面明暗光影變化系統 (Dynamic Room Firelight & Shadow Vignette)
+      // 1. 全室環境明暗呼吸：當火光微斂時四周木屋牆角與屋頂微暗，當火光躍起時陰影向外退開
+      const lightCenterX = 176 + flameSwayX;
+      const lightCenterY = 396;
+      const innerBrightRadius = 95 + firePulse * 95;
+      const outerShadowRadius = 480 + firePulse * 230;
+      const roomDimAlpha = Math.max(0.06, 0.28 - firePulse * 0.17);
+
+      const roomShadowGrad = fCtx.createRadialGradient(
+        lightCenterX,
+        lightCenterY,
+        innerBrightRadius,
+        lightCenterX,
+        lightCenterY,
+        outerShadowRadius
+      );
+      roomShadowGrad.addColorStop(0, 'rgba(12, 4, 1, 0)');
+      roomShadowGrad.addColorStop(0.45, `rgba(14, 5, 2, ${(roomDimAlpha * 0.42).toFixed(3)})`);
+      roomShadowGrad.addColorStop(1, `rgba(10, 3, 1, ${roomDimAlpha.toFixed(3)})`);
+      fCtx.fillStyle = roomShadowGrad;
+      fCtx.fillRect(0, 0, 1024, 576);
+
+      // 2. 壁爐主火光暖色漫射光暈 (隨 firePulse 動態伸縮半徑與亮度，照亮火爐周圍人物與木牆)
+      const glowRadius = 260 + firePulse * 195;
+      const hearthGrad = fCtx.createRadialGradient(
+        lightCenterX,
+        lightCenterY,
+        10,
+        lightCenterX,
+        lightCenterY,
+        glowRadius
+      );
+      hearthGrad.addColorStop(0, `rgba(255, 195, 85, ${(0.14 + firePulse * 0.20).toFixed(3)})`);
+      hearthGrad.addColorStop(0.35, `rgba(255, 135, 40, ${(0.08 + firePulse * 0.13).toFixed(3)})`);
+      hearthGrad.addColorStop(0.7, `rgba(255, 85, 15, ${(0.03 + firePulse * 0.06).toFixed(3)})`);
+      hearthGrad.addColorStop(1, 'rgba(255, 60, 10, 0)');
+      fCtx.fillStyle = hearthGrad;
+      fCtx.fillRect(0, 120, 680, 456);
+
+      // 3. 木地板與紅地毯上的橢圓形搖曳火光投射
+      fCtx.save();
+      fCtx.translate(190 + flameSwayX * 1.4, 472);
+      fCtx.scale(2.3, 0.52);
+      const floorRadius = 95 + firePulse * 75;
+      const floorGrad = fCtx.createRadialGradient(0, 0, 6, 0, 0, floorRadius);
+      floorGrad.addColorStop(0, `rgba(255, 175, 65, ${(0.10 + firePulse * 0.18).toFixed(3)})`);
+      floorGrad.addColorStop(0.55, `rgba(255, 110, 28, ${(0.04 + firePulse * 0.09).toFixed(3)})`);
+      floorGrad.addColorStop(1, 'rgba(255, 70, 10, 0)');
+      fCtx.fillStyle = floorGrad;
+      fCtx.fillRect(-floorRadius, -floorRadius, floorRadius * 2, floorRadius * 2);
+      fCtx.restore();
 
       // (2E) 三杯熱可可的冉冉像素白煙 (即時跟隨三位角色手中杯口的最新位置！)
       steamParticles.forEach((sp) => {
