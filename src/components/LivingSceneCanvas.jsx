@@ -545,57 +545,26 @@ export default function LivingSceneCanvas({
         fCtx.drawImage(currentGirlImg, 60, 332);
       }
 
-      // (2E) 隨爐火搖曳的全畫面明暗光影變化系統 (Dynamic Room Firelight & Shadow Vignette)
-      // 1. 全室環境明暗呼吸：當火光微斂時四周木屋牆角與屋頂微暗，當火光躍起時陰影向外退開
-      const lightCenterX = 176 + flameSwayX;
-      const lightCenterY = 396;
-      const innerBrightRadius = 95 + firePulse * 95;
-      const outerShadowRadius = 480 + firePulse * 230;
-      const roomDimAlpha = Math.max(0.06, 0.28 - firePulse * 0.17);
-
-      const roomShadowGrad = fCtx.createRadialGradient(
-        lightCenterX,
-        lightCenterY,
-        innerBrightRadius,
-        lightCenterX,
-        lightCenterY,
-        outerShadowRadius
-      );
-      roomShadowGrad.addColorStop(0, 'rgba(12, 4, 1, 0)');
-      roomShadowGrad.addColorStop(0.45, `rgba(14, 5, 2, ${(roomDimAlpha * 0.42).toFixed(3)})`);
-      roomShadowGrad.addColorStop(1, `rgba(10, 3, 1, ${roomDimAlpha.toFixed(3)})`);
-      fCtx.fillStyle = roomShadowGrad;
-      fCtx.fillRect(0, 0, 1024, 576);
-
-      // 2. 壁爐主火光暖色漫射光暈 (隨 firePulse 動態伸縮半徑與亮度，照亮火爐周圍人物與木牆)
-      const glowRadius = 260 + firePulse * 195;
-      const hearthGrad = fCtx.createRadialGradient(
-        lightCenterX,
-        lightCenterY,
-        10,
-        lightCenterX,
-        lightCenterY,
-        glowRadius
-      );
-      hearthGrad.addColorStop(0, `rgba(255, 195, 85, ${(0.14 + firePulse * 0.20).toFixed(3)})`);
-      hearthGrad.addColorStop(0.35, `rgba(255, 135, 40, ${(0.08 + firePulse * 0.13).toFixed(3)})`);
-      hearthGrad.addColorStop(0.7, `rgba(255, 85, 15, ${(0.03 + firePulse * 0.06).toFixed(3)})`);
-      hearthGrad.addColorStop(1, 'rgba(255, 60, 10, 0)');
-      fCtx.fillStyle = hearthGrad;
-      fCtx.fillRect(0, 120, 680, 456);
-
-      // 3. 木地板與紅地毯上的橢圓形搖曳火光投射
-      fCtx.save();
-      fCtx.translate(190 + flameSwayX * 1.4, 472);
-      fCtx.scale(2.3, 0.52);
-      const floorRadius = 95 + firePulse * 75;
-      const floorGrad = fCtx.createRadialGradient(0, 0, 6, 0, 0, floorRadius);
-      floorGrad.addColorStop(0, `rgba(255, 175, 65, ${(0.10 + firePulse * 0.18).toFixed(3)})`);
-      floorGrad.addColorStop(0.55, `rgba(255, 110, 28, ${(0.04 + firePulse * 0.09).toFixed(3)})`);
-      floorGrad.addColorStop(1, 'rgba(255, 70, 10, 0)');
-      fCtx.fillStyle = floorGrad;
-      fCtx.fillRect(-floorRadius, -floorRadius, floorRadius * 2, floorRadius * 2);
-      fCtx.restore();
+      // (2E) 隨爐火搖曳的「單純變暗 ⟷ 變回原圖原本狀態」明暗變化
+      // 不疊加任何額外亮光光暈（保留原圖 100% 乾淨飽和色彩），僅在火勢微斂時柔和變暗，火旺時回到原圖狀態 (alpha = 0)
+      const dimAmount = isFireBoosted ? 0 : (1 - firePulse) * 0.22;
+      if (dimAmount > 0.005) {
+        const lightCenterX = 176 + flameSwayX;
+        const lightCenterY = 396;
+        const roomShadowGrad = fCtx.createRadialGradient(
+          lightCenterX,
+          lightCenterY,
+          70,
+          lightCenterX,
+          lightCenterY,
+          560
+        );
+        roomShadowGrad.addColorStop(0, `rgba(10, 4, 1, ${(dimAmount * 0.25).toFixed(3)})`);
+        roomShadowGrad.addColorStop(0.35, `rgba(10, 4, 1, ${(dimAmount * 0.65).toFixed(3)})`);
+        roomShadowGrad.addColorStop(1, `rgba(8, 3, 1, ${dimAmount.toFixed(3)})`);
+        fCtx.fillStyle = roomShadowGrad;
+        fCtx.fillRect(0, 0, 1024, 576);
+      }
 
       // (2E) 三杯熱可可的冉冉像素白煙 (即時跟隨三位角色手中杯口的最新位置！)
       steamParticles.forEach((sp) => {
