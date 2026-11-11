@@ -135,7 +135,7 @@ export default function LivingSceneCanvas({
 
     // 載入基礎背景圖以提取角色手部遮罩與局部動態像素貼片
     const baseImg = new Image();
-    baseImg.src = `${import.meta.env.BASE_URL}assets/scene_clean.png`;
+    baseImg.src = './assets/scene_clean.png';
 
     // 1. 初始化窗外三層景深雪花粒子 (範圍 x=712..956, y=108..372)
     const snowflakes = [];
@@ -566,7 +566,7 @@ export default function LivingSceneCanvas({
       />
       {/* 窗框、窗前人物與聖誕樹前景遮罩 (讓雪花自然從窗框與男生身後飄過) */}
       <img
-        src={`${import.meta.env.BASE_URL}assets/window_fg.png`}
+        src="./assets/window_fg.png"
         alt=""
         className="scene-layer window-fg-mask"
         draggable={false}

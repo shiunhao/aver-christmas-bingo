@@ -280,7 +280,7 @@ export default function App() {
       <div className="stage-container">
         {/* 底層：無字乾淨背景圖 (已清除黑板字、羊皮紙字、按鈕殘影與靜態假雪點) */}
         <img
-          src={`${import.meta.env.BASE_URL}assets/scene_clean.png`}
+          src="./assets/scene_clean.png"
           alt="AVer 聖誕幸運賓果場景"
           className="scene-layer base-scene-img"
           draggable={false}
@@ -434,7 +434,7 @@ export default function App() {
             disabled={isRolling}
           >
             <img
-              src={`${import.meta.env.BASE_URL}assets/btn_draw_blank.png`}
+              src="./assets/btn_draw_blank.png"
               alt=""
               className="draw-btn-bg"
               draggable={false}
