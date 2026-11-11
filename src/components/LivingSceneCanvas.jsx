@@ -475,14 +475,13 @@ export default function LivingSceneCanvas({
         walker.facing === -1 ? drawBoyX + (96 - 80) : drawBoyX + 80;
       const boyMugY = drawBoyY + 48;
 
-      // (2C) 計算爐火有機搖曳強度 (結合慢速柴火呼吸 + 中速火舌跳動 + 快速微閃，並拉伸對比度讓波谷與波峰完整達到 0.0 ~ 1.0)
-      const slowWave = Math.sin(now * 0.0021) * 0.5 + 0.5;
-      const midWave = Math.sin(now * 0.0062 + 1.2) * 0.5 + 0.5;
-      const fastWave = Math.sin(now * 0.015 + 2.7) * 0.5 + 0.5;
-      const rawMix = slowWave * 0.56 + midWave * 0.30 + fastWave * 0.14;
-      const stretchedPulse = Math.max(0, Math.min(1, (rawMix - 0.15) / 0.70)); // 完整擺動於 0.0 (最暗) ~ 1.0 (原圖最亮)
+      // (2C) 計算爐火緩慢呼吸強度 (移除快閃，改以約 7~8 秒為周期的平緩呼吸起伏)
+      const slowWave = Math.sin(now * 0.00075) * 0.5 + 0.5;
+      const gentleWave = Math.sin(now * 0.0015 + 1.4) * 0.5 + 0.5;
+      const rawMix = slowWave * 0.75 + gentleWave * 0.25;
+      const stretchedPulse = Math.max(0, Math.min(1, (rawMix - 0.12) / 0.76)); // 緩慢平滑擺動於 0.0 (微暗) ~ 1.0 (原圖最亮)
       const firePulse = isFireBoosted ? 1.0 : stretchedPulse;
-      const flameSwayX = Math.sin(now * 0.0062) * 6;
+      const flameSwayX = Math.sin(now * 0.0012) * 4;
 
       // (2D) 壁爐像素火焰緩緩燃燒 (火焰高度與爐火強度 firePulse 100% 同步起伏！)
       const isGirlHandUp = girlAction !== 'DOWN';
