@@ -1,0 +1,969 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #160904;
+  font-family: 'Noto Sans TC', sans-serif;
+  color: #fff6e5;
+}
+
+/* 視窗滿版置中容器 */
+.app-viewport {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #2d1408 0%, #120602 100%);
+  position: relative;
+}
+
+/* 16:9 像素級鎖定比例舞台容器 (1024 x 576) */
+.stage-container {
+  position: relative;
+  width: min(100vw, calc(100vh * (16 / 9)));
+  height: min(100vh, calc(100vw * (9 / 16)));
+  aspect-ratio: 16 / 9;
+  container-type: size;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 2px #4e220c;
+  overflow: hidden;
+  background: #240f06;
+}
+
+/* 場景圖層共用樣式 */
+.scene-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+}
+
+.base-scene-img {
+  z-index: 1;
+}
+
+.snow-canvas {
+  z-index: 2;
+}
+
+.window-fg-mask {
+  z-index: 3;
+}
+
+.fx-canvas {
+  z-index: 4;
+}
+
+/* ==========================================================================
+   1. 右上角三個木牌控制按鈕 (精準對齊原圖 x=706..1012, y=12..45)
+   ========================================================================== */
+.top-wood-btn {
+  position: absolute;
+  top: 2.08%;
+  height: 5.73%;
+  background: transparent;
+  border: none;
+  border-radius: 0.6cqw;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.top-wood-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 0 12px rgba(255, 210, 120, 0.55);
+}
+
+.top-wood-btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+/* 音樂按鈕: x=706..803 (68.94% .. 78.42%) */
+.btn-music {
+  left: 68.94%;
+  width: 9.48%;
+}
+
+/* 音效按鈕: x=812..910 (79.3% .. 88.87%) */
+.btn-sfx {
+  left: 79.3%;
+  width: 9.57%;
+}
+
+/* 全螢幕按鈕: x=919..1012 (89.75% .. 98.83%) */
+.btn-fullscreen {
+  left: 89.75%;
+  width: 9.08%;
+}
+
+/* 當切換為「關」或「退出全螢幕」時，覆蓋原圖同款木牌視覺 */
+.wood-btn-override {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #4b220e 0%, #341507 100%);
+  border: 0.18cqw solid #c89658;
+  border-radius: 0.55cqw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35cqw;
+  color: #ffb899;
+  font-size: 1.25cqw;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  box-shadow: inset 0 1px 0 rgba(255, 220, 160, 0.25);
+}
+
+.override-icon {
+  font-size: 1.25cqw;
+}
+
+/* 左上角隱藏式主持輔助膠囊列 (半透明不搶戲，滑鼠靠近時清晰) */
+.host-quick-pills {
+  position: absolute;
+  top: 2.2%;
+  left: 1.8%;
+  display: flex;
+  gap: 0.6cqw;
+  z-index: 12;
+  opacity: 0.42;
+  transition: opacity 0.2s ease;
+}
+
+.host-quick-pills:hover {
+  opacity: 1;
+}
+
+.quick-pill {
+  background: rgba(54, 22, 8, 0.88);
+  border: 0.15cqw solid #b88144;
+  color: #f8e5c2;
+  padding: 0.35cqw 0.8cqw;
+  border-radius: 0.5cqw;
+  font-size: 1.05cqw;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.quick-pill:hover {
+  transform: translateY(-1px);
+  background: #52230c;
+  border-color: #ffd27d;
+}
+
+.quick-pill.active {
+  background: #22542b;
+  border-color: #84e390;
+  color: #eaffec;
+}
+
+.quick-pill.bingo-pill {
+  background: linear-gradient(180deg, #a81c1c 0%, #751010 100%);
+  border-color: #ffcf70;
+  color: #fff6d6;
+}
+
+/* ==========================================================================
+   2. 中央黑板顯示區 (精準對齊原圖黑板內框 x=384..617, y=189..352)
+   ========================================================================== */
+.chalkboard-zone {
+  position: absolute;
+  left: 37.5%;
+  top: 32.8%;
+  width: 22.75%;
+  height: 28.3%;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1cqw 0.8cqw 0.9cqw;
+  cursor: pointer;
+}
+
+.chalk-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9cqw;
+  color: #f3ead2;
+  font-size: 1.85cqw;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0.2cqw 0 #0d1f0b;
+}
+
+.chalk-star {
+  color: #ffe28a;
+  font-size: 1.45cqw;
+  display: inline-block;
+  animation: starTwinkle 2.2s infinite ease-in-out;
+}
+
+@keyframes starTwinkle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 1;
+  }
+}
+
+.chalk-number-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* 超大像素數字 (與原圖 24 完全同風格的米白像素大字 + 深綠立體陰影) */
+.chalk-big-number {
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  font-size: 7.4cqw;
+  line-height: 1;
+  color: #fcf1cf;
+  letter-spacing: -0.03em;
+  text-shadow: 0.35cqw 0.35cqw 0 #10240d, -0.1cqw -0.1cqw 0 rgba(255, 255, 230, 0.25);
+  display: inline-block;
+}
+
+.chalk-ready-number {
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  font-size: 3.6cqw;
+  color: rgba(252, 241, 207, 0.78);
+  text-shadow: 0.25cqw 0.25cqw 0 #10240d;
+  animation: pulseReady 2s infinite ease-in-out;
+}
+
+@keyframes pulseReady {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.95;
+  }
+}
+
+.chalkboard-zone.rolling .chalk-big-number {
+  color: #ffe885;
+  transform: scale(0.95);
+  filter: drop-shadow(0 0 8px rgba(255, 230, 110, 0.45));
+}
+
+.chalkboard-zone.revealed .chalk-big-number {
+  animation: numberPop 0.55s cubic-bezier(0.22, 1.4, 0.36, 1);
+  color: #fff8dc;
+  filter: drop-shadow(0 0 12px rgba(255, 220, 90, 0.55));
+}
+
+@keyframes numberPop {
+  0% {
+    transform: scale(0.55);
+  }
+  65% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.chalk-footer {
+  color: #d8dec8;
+  font-size: 1.32cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0.15cqw 0 #0d1f0b;
+}
+
+/* 吉祥話浮動小絲帶 */
+.chalk-phrase-badge {
+  position: absolute;
+  bottom: -2.35cqw;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: linear-gradient(180deg, #431d0a 0%, #2b1105 100%);
+  border: 0.15cqw solid #dda059;
+  color: #ffeaad;
+  font-size: 1.08cqw;
+  font-weight: 700;
+  padding: 0.18cqw 0.85cqw;
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.65);
+  pointer-events: none;
+  animation: fadeSlideUp 0.3s ease-out;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* ==========================================================================
+   3. 中央下方「抽下一號 ▶」按鈕與「空白鍵也能抽號」(座標 x=376..624, y=390..480)
+   ========================================================================== */
+.draw-action-zone {
+  position: absolute;
+  left: 36.72%;
+  top: 67.7%;
+  width: 24.22%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pixel-draw-button {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 248 / 62;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+}
+
+.pixel-draw-button:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.08) drop-shadow(0 6px 14px rgba(255, 80, 50, 0.45));
+}
+
+.pixel-draw-button:active:not(:disabled) {
+  transform: translateY(3px) scale(0.98);
+  filter: brightness(0.96);
+}
+
+.pixel-draw-button:disabled {
+  cursor: wait;
+  filter: saturate(0.85);
+}
+
+.draw-btn-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.draw-btn-label {
+  position: relative;
+  z-index: 2;
+  color: #fff2dc;
+  font-size: 2.38cqw;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0.22cqw 0 #6e0d10, 0.15cqw 0.15cqw 0 #4a0709;
+  transform: translateY(-0.22cqw);
+  display: flex;
+  align-items: center;
+  gap: 0.55cqw;
+}
+
+.draw-arrow {
+  font-size: 1.85cqw;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.pixel-draw-button:hover:not(:disabled) .draw-arrow {
+  transform: translateX(0.3cqw);
+}
+
+.spacebar-hint {
+  margin-top: 0.38cqw;
+  color: #f0dec2;
+  font-size: 1.32cqw;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0.18cqw 0 #260d04, 0 0 6px rgba(0, 0, 0, 0.85);
+}
+
+/* ==========================================================================
+   4. 左下角「↻ 重新開始」按鈕 (座標 x=20..154, y=514..556)
+   ========================================================================== */
+.bottom-left-restart-btn {
+  position: absolute;
+  left: 1.95%;
+  top: 89.2%;
+  width: 13.1%;
+  height: 7.3%;
+  background: transparent;
+  border: none;
+  border-radius: 0.7cqw;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+}
+
+.bottom-left-restart-btn:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 0 14px rgba(255, 200, 110, 0.55);
+}
+
+.bottom-left-restart-btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+/* ==========================================================================
+   5. 右下角「禮物盒 + 已開號碼 X / 75 ▶」木牌 (座標 x=806..996, y=476..558)
+   ========================================================================== */
+.bottom-right-history-btn {
+  position: absolute;
+  left: 78.7%;
+  top: 82.6%;
+  width: 18.6%;
+  height: 14.2%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+}
+
+.bottom-right-history-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: drop-shadow(0 0 12px rgba(255, 215, 110, 0.6));
+}
+
+.bottom-right-history-btn:active {
+  transform: translateY(2px) scale(0.98);
+}
+
+/* 羊皮紙木牌文字對齊區 (對應原圖 x=868..966, y=502..549) */
+.parchment-text-area {
+  position: absolute;
+  left: 33.5%;
+  top: 31%;
+  width: 51.5%;
+  height: 57%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1cqw;
+  pointer-events: none;
+}
+
+.parchment-title {
+  color: #4a210b;
+  font-size: 1.38cqw;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.15;
+}
+
+.parchment-count {
+  color: #3b1706;
+  font-size: 1.65cqw;
+  font-weight: 900;
+  font-family: 'Noto Sans TC', sans-serif;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+
+/* ==========================================================================
+   6. 場景互動彩蛋熱區 (壁爐、三位角色、聖誕樹)
+   ========================================================================== */
+.hotspot {
+  position: absolute;
+  z-index: 6;
+  cursor: pointer;
+  border-radius: 1cqw;
+}
+
+.hotspot-fireplace {
+  left: 12.5%;
+  top: 60%;
+  width: 8.5%;
+  height: 15%;
+}
+
+.hotspot-girl {
+  left: 4.5%;
+  top: 57%;
+  width: 11.5%;
+  height: 29%;
+}
+
+.hotspot-boy-mid {
+  left: 23.5%;
+  top: 55%;
+  width: 11.8%;
+  height: 31%;
+}
+
+.hotspot-boy-right {
+  left: 69.2%;
+  top: 45%;
+  width: 9.2%;
+  height: 38%;
+}
+
+.hotspot-tree {
+  left: 88.5%;
+  top: 32%;
+  width: 11%;
+  height: 45%;
+}
+
+/* ==========================================================================
+   7. 像素風木屋彈窗系統 (HistoryModal / ConfirmModal / BingoCelebrationModal)
+   ========================================================================== */
+.pixel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 5, 2, 0.78);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.18s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pixel-modal-card {
+  background: linear-gradient(180deg, #3c1b0b 0%, #261005 100%);
+  border: 4px solid #c98a4b;
+  box-shadow: 0 0 0 4px #1e0b03, 0 24px 60px rgba(0, 0, 0, 0.9);
+  border-radius: 14px;
+  color: #fff5e1;
+  max-width: 1020px;
+  width: 95%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.pixel-modal-header {
+  background: linear-gradient(90deg, #59260e 0%, #733315 50%, #59260e 100%);
+  border-bottom: 3px solid #a86b32;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pixel-modal-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: #ffebb8;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pixel-badge {
+  background: #224724;
+  border: 2px solid #75c97b;
+  color: #e9ffeb;
+  font-size: 0.9rem;
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+
+.pixel-close-btn {
+  background: #8c2020;
+  border: 2px solid #ffb3a7;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.pixel-close-btn:hover {
+  background: #b02828;
+  transform: scale(1.04);
+}
+
+/* 對獎驗證狀態列 */
+.verify-bar {
+  background: rgba(25, 10, 4, 0.65);
+  border-bottom: 2px solid rgba(180, 115, 55, 0.35);
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.verify-info {
+  font-size: 0.95rem;
+  color: #f2dcc2;
+}
+
+.verify-pass {
+  color: #7dff96;
+}
+
+.verify-fail {
+  color: #ff8585;
+}
+
+.verify-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.pixel-mini-btn {
+  background: #4e2410;
+  border: 2px solid #c98a4b;
+  color: #ffebb8;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.pixel-mini-btn:hover {
+  background: #693217;
+}
+
+.pixel-mini-btn.celebrate-btn {
+  background: linear-gradient(180deg, #c92626 0%, #8f1515 100%);
+  border-color: #ffd875;
+  color: #fff9e6;
+}
+
+/* 1~75 號 B-I-N-G-O 盤面網格 */
+.bingo-board-grid {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.bingo-row {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.bingo-row-header {
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  padding: 4px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3);
+}
+
+.bingo-letter {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.2rem;
+}
+
+.bingo-range {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.bingo-row-cells {
+  display: grid;
+  grid-template-columns: repeat(15, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.bingo-cell {
+  position: relative;
+  height: 48px;
+  border-radius: 7px;
+  border: 2px solid #593018;
+  background: #231107;
+  color: rgba(240, 215, 185, 0.38);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+.bingo-cell:hover {
+  transform: translateY(-2px);
+  border-color: #d49b5d;
+}
+
+.bingo-cell.drawn {
+  background: linear-gradient(180deg, #21592a 0%, #143b1a 100%);
+  border-color: #7ee087;
+  color: #fff9e6;
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.25);
+}
+
+.bingo-cell.latest {
+  background: linear-gradient(180deg, #d62828 0%, #8f1111 100%);
+  border-color: #ffe169;
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.65);
+  animation: pulseLatest 1.3s infinite ease-in-out;
+}
+
+@keyframes pulseLatest {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.bingo-cell.checking {
+  outline: 3px solid #ffd166;
+  outline-offset: 1px;
+}
+
+.cell-num {
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.cell-order {
+  font-size: 0.65rem;
+  color: #ffdf85;
+  font-weight: 700;
+}
+
+.cell-check-tag {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffd166;
+  color: #2b1105;
+  font-size: 0.7rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 開獎先後順序時間軸 */
+.history-timeline-section {
+  background: rgba(18, 7, 2, 0.7);
+  border-top: 2px solid #6b3819;
+  padding: 12px 20px 16px;
+}
+
+.timeline-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #e6c69c;
+  margin-bottom: 8px;
+}
+
+.timeline-empty {
+  color: rgba(240, 215, 185, 0.6);
+  font-size: 0.9rem;
+  padding: 8px 0;
+}
+
+.timeline-balls {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.timeline-ball {
+  flex: 0 0 auto;
+  min-width: 54px;
+  background: #3b1c0c;
+  border: 2px solid #a66c38;
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timeline-ball.is-latest {
+  background: #9e1b1b;
+  border-color: #ffe066;
+}
+
+.t-order {
+  font-size: 0.68rem;
+  color: #deb887;
+}
+
+.t-num {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+/* 確認重新開始彈窗 & BINGO 慶祝彈窗 */
+.confirm-modal,
+.bingo-win-card {
+  max-width: 520px;
+  text-align: center;
+}
+
+.confirm-modal-desc {
+  padding: 24px 24px 16px;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: #f5dec3;
+}
+
+.confirm-modal-actions {
+  padding: 12px 24px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.pixel-secondary-btn,
+.pixel-danger-btn,
+.pixel-primary-btn {
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.pixel-secondary-btn {
+  background: #4a2511;
+  border: 2px solid #b88144;
+  color: #f8e5c2;
+}
+
+.pixel-danger-btn {
+  background: linear-gradient(180deg, #c92626 0%, #8a1313 100%);
+  border: 2px solid #ffb3a7;
+  color: #fff;
+}
+
+.pixel-primary-btn {
+  background: linear-gradient(180deg, #d62828 0%, #941414 100%);
+  border: 3px solid #ffe066;
+  color: #fff9e6;
+  font-size: 1.15rem;
+  padding: 12px 30px;
+}
+
+.pixel-secondary-btn:hover,
+.pixel-danger-btn:hover,
+.pixel-primary-btn:hover {
+  transform: scale(1.04);
+}
+
+.bingo-win-card {
+  padding: 28px 24px;
+  background: radial-gradient(circle at center, #5e1914 0%, #2b0c06 100%);
+  border-color: #ffe066;
+}
+
+.bingo-win-ribbon {
+  display: inline-block;
+  background: #21592a;
+  border: 2px solid #84e390;
+  color: #eaffec;
+  font-weight: 900;
+  font-size: 0.85rem;
+  padding: 4px 16px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+  align-self: center;
+}
+
+.bingo-win-title {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #ffe680;
+  text-shadow: 0 3px 0 #590d0d;
+  margin-bottom: 10px;
+}
+
+.bingo-win-subtitle {
+  font-size: 1.1rem;
+  color: #ffebd2;
+  margin-bottom: 18px;
+}
+
+.bingo-win-gifts {
+  font-size: 2.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  animation: bounceGifts 1.2s infinite ease-in-out;
+}
+
+@keyframes bounceGifts {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
