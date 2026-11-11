@@ -399,7 +399,7 @@ export default function LivingSceneCanvas({
           ? { x: 285, y: 369 }
           : { x: 281, y: 361 };
 
-      // (2B) 更新並繪製窗邊喝咖啡男生的「4 幀自然雙腿邁步 & 全身轉向背面觀看窗外雪景」
+      // (2B) 更新並繪製窗邊喝咖啡男生的「4 幀自然雙腿邁步左右來回走動」（不轉身看窗外）
       const walkFrames = [
         boySprites.walk0,
         boySprites.walk1,
@@ -407,7 +407,6 @@ export default function LivingSceneCanvas({
         boySprites.walk3
       ];
       let currentBoySprite = boySprites.idle;
-      let isLookingOut = false;
 
       if (rolling || revealed) {
         currentBoySprite = rolling ? boySprites.sip : boySprites.idle;
@@ -419,21 +418,13 @@ export default function LivingSceneCanvas({
 
         if (walker.x >= walker.maxX) {
           walker.x = walker.maxX;
-          walker.state = 'GAZE_RIGHT';
+          walker.state = 'PAUSE_RIGHT';
           walker.stateStartTime = now;
-          walker.pauseDuration = 4000 + Math.random() * 1200;
+          walker.pauseDuration = 1100 + Math.random() * 500;
         }
-      } else if (walker.state === 'GAZE_RIGHT') {
+      } else if (walker.state === 'PAUSE_RIGHT') {
         const elapsed = now - walker.stateStartTime;
-        // 先喝口熱咖啡，接著整個身體轉向背面靜靜欣賞窗外雪景與小木屋，最後轉回正面準備往左走
-        if (elapsed < 550) {
-          currentBoySprite = boySprites.sip;
-        } else if (elapsed > walker.pauseDuration - 450) {
-          currentBoySprite = boySprites.idle;
-        } else {
-          currentBoySprite = boySprites.lookBack;
-          isLookingOut = true;
-        }
+        currentBoySprite = elapsed < walker.pauseDuration * 0.55 ? boySprites.sip : boySprites.idle;
         if (elapsed >= walker.pauseDuration) {
           walker.state = 'WALK_LEFT';
           walker.facing = -1;
@@ -446,20 +437,13 @@ export default function LivingSceneCanvas({
 
         if (walker.x <= walker.minX) {
           walker.x = walker.minX;
-          walker.state = 'GAZE_LEFT';
+          walker.state = 'PAUSE_LEFT';
           walker.stateStartTime = now;
-          walker.pauseDuration = 3800 + Math.random() * 1200;
+          walker.pauseDuration = 1100 + Math.random() * 500;
         }
-      } else if (walker.state === 'GAZE_LEFT') {
+      } else if (walker.state === 'PAUSE_LEFT') {
         const elapsed = now - walker.stateStartTime;
-        if (elapsed < 550) {
-          currentBoySprite = boySprites.sip;
-        } else if (elapsed > walker.pauseDuration - 450) {
-          currentBoySprite = boySprites.idle;
-        } else {
-          currentBoySprite = boySprites.lookBack;
-          isLookingOut = true;
-        }
+        currentBoySprite = elapsed < walker.pauseDuration * 0.55 ? boySprites.sip : boySprites.idle;
         if (elapsed >= walker.pauseDuration) {
           walker.state = 'WALK_RIGHT';
           walker.facing = 1;
@@ -476,7 +460,7 @@ export default function LivingSceneCanvas({
       // 繪製窗邊男生精靈圖
       if (currentBoySprite && currentBoySprite.complete && currentBoySprite.naturalWidth > 0) {
         fCtx.save();
-        if (walker.facing === -1 && !isLookingOut) {
+        if (walker.facing === -1) {
           fCtx.translate(drawBoyX + 96, drawBoyY);
           fCtx.scale(-1, 1);
           fCtx.drawImage(currentBoySprite, 0, 0);
@@ -487,12 +471,9 @@ export default function LivingSceneCanvas({
       }
 
       // 計算窗邊男生當前手中馬克杯口的即時座標
-      const boyMugX = isLookingOut
-        ? drawBoyX + 68
-        : walker.facing === -1
-        ? drawBoyX + (96 - 80)
-        : drawBoyX + 80;
-      const boyMugY = isLookingOut ? drawBoyY + 46 : drawBoyY + 48;
+      const boyMugX =
+        walker.facing === -1 ? drawBoyX + (96 - 80) : drawBoyX + 80;
+      const boyMugY = drawBoyY + 48;
 
       // (2C) 壁爐地面與室內柔和呼吸暖光
       const flicker =
@@ -590,7 +571,7 @@ export default function LivingSceneCanvas({
 
         const sy = baseOriginY - p * 24;
         const sx = baseOriginX + Math.sin(now * 0.003 + sp.phase + p * 5) * 3.0;
-        const alpha = Math.sin(p * Math.PI) * (sp.mugIdx === 2 && isLookingOut ? 0.38 : 0.68);
+        const alpha = Math.sin(p * Math.PI) * 0.68;
 
         fCtx.fillStyle = `rgba(255, 250, 242, ${alpha.toFixed(2)})`;
         const sz = p > 0.5 ? 3 : 2;
