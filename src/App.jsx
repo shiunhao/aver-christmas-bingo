@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import LivingSceneCanvas from './components/LivingSceneCanvas';
 import HistoryModal from './components/HistoryModal';
 import BingoCelebrationModal from './components/BingoCelebrationModal';
+import QrCodeModal from './components/QrCodeModal';
 import { soundEngine } from './utils/soundEngine';
 import { getBingoLetter, getNumberPhrase } from './utils/christmasPhrases';
 
@@ -59,6 +60,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBingoModal, setShowBingoModal] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
 
   // 場景互動彩蛋狀態
   const [fireBoost, setFireBoost] = useState(0);
@@ -172,13 +174,17 @@ export default function App() {
 
       if (e.code === 'Space') {
         e.preventDefault();
-        if (!showHistory && !showResetConfirm && !showBingoModal) {
+        if (!showHistory && !showResetConfirm && !showBingoModal && !showQrModal) {
           handleDrawNext();
         }
       } else if (e.key === 'h' || e.key === 'H') {
         e.preventDefault();
         soundEngine.playClick();
         setShowHistory((prev) => !prev);
+      } else if (e.key === 'q' || e.key === 'Q') {
+        e.preventDefault();
+        soundEngine.playClick();
+        setShowQrModal((prev) => !prev);
       } else if (e.key === 'b' || e.key === 'B') {
         e.preventDefault();
         soundEngine.playBingoFanfare();
@@ -187,12 +193,13 @@ export default function App() {
         setShowHistory(false);
         setShowResetConfirm(false);
         setShowBingoModal(false);
+        setShowQrModal(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDrawNext, showHistory, showResetConfirm, showBingoModal]);
+  }, [handleDrawNext, showHistory, showResetConfirm, showBingoModal, showQrModal]);
 
   // 切換背景音樂
   const toggleMusic = () => {
@@ -351,8 +358,19 @@ export default function App() {
           )}
         </button>
 
-        {/* 頂部隱藏式快捷輔助工具列 (滑鼠移近頂部或點擊標題時方便使用：語音報號 & BINGO 煙火) */}
+        {/* 頂部隱藏式快捷輔助工具列 (滑鼠移近頂部或點擊標題時方便使用：玩家 QR Code、語音報號 & BINGO 煙火) */}
         <div className="host-quick-pills" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className="quick-pill qr-pill"
+            onClick={() => {
+              soundEngine.playClick();
+              setShowQrModal(true);
+            }}
+            title="展開大螢幕 QR Code 讓全場掃描領取專屬賓果卡 (快捷鍵 Q)"
+          >
+            📱 掃碼領卡 (Q)
+          </button>
           <button
             type="button"
             className={`quick-pill ${voiceOn ? 'active' : ''}`}
@@ -590,6 +608,14 @@ export default function App() {
         onClose={() => setShowBingoModal(false)}
         drawnCount={drawCount}
         latestNum={latestNumber}
+      />
+
+      {/* ====================================================================
+          彈出視窗：玩家手機端掃碼領卡 QR Code
+      ==================================================================== */}
+      <QrCodeModal
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
       />
     </div>
   );

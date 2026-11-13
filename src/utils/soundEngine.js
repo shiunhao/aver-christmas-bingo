@@ -275,6 +275,88 @@ class SoundEngine {
     });
   }
 
+  // 玩家端：點選賓果格標記音效（清脆雙音叮咚）
+  playTileMark() {
+    if (!this.sfxEnabled) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const notes = [587.33, 880.0]; // D5 -> A5
+    notes.forEach((f, idx) => {
+      const now = this.ctx.currentTime + idx * 0.055;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    });
+  }
+
+  // 玩家端：取消賓果格標記音效（柔和退回音）
+  playTileUnmark() {
+    if (!this.sfxEnabled) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.exponentialRampToValueAtTime(293.66, now + 0.08);
+    gain.gain.setValueAtTime(0.07, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  // 玩家端：達成新連線時的璀璨星芒慶祝音效
+  playLineComplete(lineCount = 1) {
+    if (!this.sfxEnabled) return;
+    this.ensureContext();
+    if (!this.ctx) return;
+
+    // 隨著連線數增加，結尾音高更華麗
+    const chord =
+      lineCount >= 3
+        ? [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98]
+        : [523.25, 659.25, 783.99, 1046.5, 1318.5];
+
+    chord.forEach((f, idx) => {
+      const now = this.ctx.currentTime + idx * 0.07;
+      const osc = this.ctx.createOscillator();
+      const sub = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, now);
+
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(f * 2, now);
+
+      const dur = idx === chord.length - 1 ? 0.65 : 0.28;
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.14, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0008, now + dur);
+
+      osc.connect(gain);
+      sub.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      sub.start(now);
+      osc.stop(now + dur + 0.04);
+      sub.stop(now + dur + 0.04);
+    });
+  }
+
   // 中文語音報號 (選配)
   speakNumber(num, phrase) {
     if (!this.voiceEnabled || !('speechSynthesis' in window)) return;

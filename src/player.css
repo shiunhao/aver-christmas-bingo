@@ -1,0 +1,594 @@
+/* ==========================================================================
+   AVer 2026 聖誕幸運賓果 — 手機玩家端專屬像素視覺樣式 (448 x 1024 原始座標比例)
+   ========================================================================== */
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body,
+#player-root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 25%, #1d3c78 0%, #0d1b3e 60%, #070f24 100%);
+  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+}
+
+.player-viewport {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 鎖定 448 : 1024 像素視覺稿比例，在任何手機與平板皆 100% 精準對位 */
+.player-stage {
+  position: relative;
+  aspect-ratio: 448 / 1024;
+  height: 100dvh;
+  max-width: 100vw;
+  max-height: calc(100vw * (1024 / 448));
+  box-shadow: 0 0 42px rgba(0, 0, 0, 0.78);
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.player-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.player-snow-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  image-rendering: pixelated;
+  z-index: 2;
+}
+
+/* 右上角迷你工具列 */
+.player-top-tools {
+  position: absolute;
+  top: 1.1%;
+  right: 2.6%;
+  display: flex;
+  gap: 1.4cqw;
+  z-index: 15;
+}
+
+.player-tool-pill {
+  appearance: none;
+  border: 1.5px solid rgba(255, 224, 140, 0.65);
+  background: rgba(18, 35, 72, 0.78);
+  color: #fff6d6;
+  font-size: clamp(10px, 2.75cqw, 13px);
+  font-weight: 900;
+  padding: 0.7cqw 2.1cqw;
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s ease, background 0.15s ease;
+}
+
+.player-tool-pill:active {
+  transform: scale(0.93);
+}
+
+.player-tool-pill.is-muted {
+  opacity: 0.72;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.player-tool-pill.clear-pill {
+  background: rgba(112, 32, 32, 0.82);
+  border-color: rgba(255, 190, 140, 0.65);
+}
+
+/* ==========================================================================
+   1. 木牌「我的賓果卡」下方卡號區 (x=130..318, y=197..227)
+   ========================================================================== */
+.player-card-no-zone {
+  position: absolute;
+  left: 28%;
+  top: 19.35%;
+  width: 44%;
+  height: 3.1%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+  pointer-events: none;
+}
+
+.card-no-text {
+  color: #46230c;
+  font-size: clamp(11px, 3.85cqw, 19px);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 1px 0 rgba(255, 243, 210, 0.95),
+    1px 0 0 rgba(255, 243, 210, 0.6);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   2. 黑板中央 5x5 像素方塊網格區 (x=38..410, y=325..662)
+   ========================================================================== */
+.player-grid-zone {
+  position: absolute;
+  left: 8.48%;
+  top: 31.74%;
+  width: 83.04%;
+  height: 32.91%;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-tiles-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  column-gap: 1.55%;
+  row-gap: 1.85%;
+  position: relative;
+  z-index: 2;
+}
+
+.player-tile-btn {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.15s ease;
+  touch-action: manipulation;
+}
+
+.player-tile-btn:active {
+  transform: scale(0.91);
+}
+
+.player-tile-btn.just-clicked {
+  animation: tilePopBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes tilePopBounce {
+  0% {
+    transform: scale(0.86);
+  }
+  55% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.tile-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+/* 格子上的號碼文字 */
+.tile-number-label {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(16px, 6.4cqw, 31px);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  transform: translateY(-2%);
+  pointer-events: none;
+}
+
+/* 未選取狀態：溫暖深棕木刻字體 + 奶油白底光 */
+.player-tile-btn.is-unmarked .tile-number-label {
+  color: #3d1d0c;
+  text-shadow:
+    0 1.5px 0 rgba(255, 248, 225, 0.95),
+    0 -0.5px 0 rgba(40, 15, 5, 0.25);
+}
+
+/* 已選取狀態：明亮奶油白字體 + 深紅立體陰影 */
+.player-tile-btn.is-marked .tile-number-label {
+  color: #fff9eb;
+  text-shadow:
+    0 2px 0 #6e0d10,
+    0 0 8px rgba(255, 230, 140, 0.55);
+}
+
+/* 當該格屬於已完成連線時：浮現流光金框與呼吸星芒 */
+.player-tile-btn.is-winning-cell {
+  z-index: 4;
+  animation: winningTilePulse 1.8s ease-in-out infinite;
+}
+
+.tile-winning-ring {
+  position: absolute;
+  inset: -3%;
+  border: 2.5px solid #ffe066;
+  border-radius: 14%;
+  box-shadow:
+    0 0 10px rgba(255, 215, 0, 0.9),
+    inset 0 0 8px rgba(255, 235, 130, 0.65);
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes winningTilePulse {
+  0%,
+  100% {
+    filter: brightness(1.02) drop-shadow(0 0 4px rgba(255, 215, 0, 0.55));
+  }
+  50% {
+    filter: brightness(1.16) drop-shadow(0 0 10px rgba(255, 225, 90, 0.95));
+  }
+}
+
+/* 完成連線的金色光束 SVG 疊加層 */
+.player-lines-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  overflow: visible;
+}
+
+.line-beam-outer {
+  stroke: rgba(255, 215, 0, 0.55);
+  stroke-width: 3.4;
+  stroke-linecap: round;
+  stroke-dasharray: 150;
+  stroke-dashoffset: 0;
+  animation: drawGoldBeam 0.55s ease-out forwards;
+}
+
+.line-beam-core {
+  stroke: rgba(255, 250, 205, 0.85);
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-dasharray: 150;
+  stroke-dashoffset: 0;
+  animation: drawGoldBeam 0.55s ease-out forwards;
+}
+
+@keyframes drawGoldBeam {
+  0% {
+    stroke-dashoffset: 150;
+    opacity: 0.2;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* 載入與錯誤狀態 */
+.player-grid-loading,
+.player-grid-error {
+  color: #fff6d6;
+  text-align: center;
+  padding: 5cqw;
+  font-size: clamp(13px, 3.8cqw, 18px);
+  font-weight: 700;
+  line-height: 1.5;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.loading-spinner {
+  font-size: clamp(28px, 9cqw, 42px);
+  margin-bottom: 2cqw;
+  animation: treeBounce 1s ease-in-out infinite;
+}
+
+@keyframes treeBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.1);
+  }
+}
+
+/* ==========================================================================
+   3. 下方紅色連線狀態橫幅區 (x=128..372, y=704..748)
+   ========================================================================== */
+.player-status-banner-zone {
+  position: absolute;
+  left: 28.5%;
+  top: 68.65%;
+  width: 54.5%;
+  height: 4.45%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9;
+  cursor: pointer;
+}
+
+.status-banner-text {
+  color: #fff6e0;
+  font-size: clamp(14px, 4.9cqw, 23px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-shadow:
+    0 2px 0 #590a0c,
+    0 0 8px rgba(255, 210, 90, 0.35);
+  display: flex;
+  align-items: baseline;
+  gap: 1.2cqw;
+  white-space: nowrap;
+}
+
+.status-line-num {
+  color: #ffe46b;
+  font-size: 1.22em;
+  font-weight: 900;
+  text-shadow:
+    0 2px 0 #590a0c,
+    0 0 12px rgba(255, 225, 80, 0.85);
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+.player-status-banner-zone.has-lines .status-line-num {
+  animation: numHeartbeat 1.5s ease-in-out infinite;
+}
+
+@keyframes numHeartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+}
+
+/* ==========================================================================
+   4. 完成連線時的華麗慶祝特效彈出徽章
+   ========================================================================== */
+.line-celebration-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 16, 38, 0.42);
+  backdrop-filter: blur(2px);
+  animation: fadeInOverlay 0.2s ease-out;
+  cursor: pointer;
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.line-celebration-badge {
+  position: relative;
+  width: 84%;
+  padding: 5.5cqw 4.5cqw;
+  border-radius: 4.5cqw;
+  background: linear-gradient(180deg, #b81d24 0%, #7d0f14 100%);
+  border: 3px solid #ffd86b;
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.75),
+    0 0 28px rgba(255, 215, 0, 0.75),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  text-align: center;
+  color: #fff9e6;
+  overflow: hidden;
+  animation: badgePopIn 0.42s cubic-bezier(0.22, 1.4, 0.36, 1);
+}
+
+@keyframes badgePopIn {
+  0% {
+    transform: scale(0.55) translateY(24px);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.05) translateY(-4px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.celebration-rays {
+  position: absolute;
+  inset: -60%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 220, 100, 0.14) 0deg 15deg,
+    transparent 15deg 30deg
+  );
+  animation: spinRays 12s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spinRays {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.celebration-stars-row {
+  position: relative;
+  font-size: clamp(18px, 6.5cqw, 30px);
+  color: #ffe066;
+  letter-spacing: 0.2em;
+  margin-bottom: 1.5cqw;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.9);
+}
+
+.celebration-main-title {
+  position: relative;
+  font-size: clamp(20px, 6.8cqw, 32px);
+  font-weight: 900;
+  color: #fff6d1;
+  text-shadow:
+    0 3px 0 #4a0609,
+    0 0 14px rgba(255, 215, 0, 0.85);
+  margin-bottom: 1.8cqw;
+}
+
+.celebration-sub-desc {
+  position: relative;
+  font-size: clamp(13px, 3.9cqw, 18px);
+  font-weight: 700;
+  color: #ffe799;
+  text-shadow: 0 1.5px 0 #4a0609;
+  margin-bottom: 2.5cqw;
+}
+
+.celebration-hint {
+  position: relative;
+  font-size: clamp(11px, 3.1cqw, 14px);
+  color: rgba(255, 245, 220, 0.85);
+}
+
+/* ==========================================================================
+   5. 底部雪地溫馨小叮嚀
+   ========================================================================== */
+.player-bottom-footer {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 1.1%;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.player-bottom-footer span {
+  background: rgba(12, 26, 56, 0.72);
+  border: 1px solid rgba(255, 230, 160, 0.45);
+  color: #fff4d2;
+  font-size: clamp(10px, 2.75cqw, 13px);
+  font-weight: 700;
+  padding: 0.8cqw 3.2cqw;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   6. 清空標記確認小視窗
+   ========================================================================== */
+.player-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: rgba(6, 14, 32, 0.72);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6cqw;
+}
+
+.player-confirm-box {
+  width: 100%;
+  background: linear-gradient(180deg, #243b6b 0%, #152547 100%);
+  border: 2.5px solid #ffd166;
+  border-radius: 4cqw;
+  padding: 5cqw;
+  color: #fff8e7;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75);
+}
+
+.confirm-box-title {
+  font-size: clamp(16px, 4.8cqw, 22px);
+  font-weight: 900;
+  color: #ffe066;
+  margin-bottom: 2.5cqw;
+}
+
+.confirm-box-desc {
+  font-size: clamp(12px, 3.5cqw, 16px);
+  line-height: 1.55;
+  color: #e9f1ff;
+  margin: 0 0 4.5cqw;
+}
+
+.confirm-box-actions {
+  display: flex;
+  gap: 3cqw;
+  justify-content: center;
+}
+
+.confirm-btn-cancel,
+.confirm-btn-ok {
+  flex: 1;
+  padding: 2.4cqw 3cqw;
+  border-radius: 2.2cqw;
+  font-size: clamp(13px, 3.7cqw, 16px);
+  font-weight: 900;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.confirm-btn-cancel {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.confirm-btn-ok {
+  background: linear-gradient(180deg, #e63946 0%, #b81d24 100%);
+  color: #fff9e6;
+  border-color: #ffd166;
+}

@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 賓果卡池集合：cards/{slotId} (slotId 為 "0001" ~ "0100")
+    match /cards/{slotId} {
+      // 允許前端讀取單張卡片槽位以執行 Transaction 檢查
+      allow get: if true;
+      allow list: if true;
+
+      // 原子搶卡規則：
+      // 1. 原本的卡片必須尚未被領取 (resource.data.claimed == false)
+      // 2. 更新後的狀態必須為已領取 (request.resource.data.claimed == true)
+      // 3. 嚴格禁止竄改卡片編號與 5x5 盤面內容 (cardId, cardNo, grid, signature 必須與原資料完全相同)
+      allow update: if resource.data.claimed == false
+                    && request.resource.data.claimed == true
+                    && request.resource.data.cardId == resource.data.cardId
+                    && request.resource.data.cardNo == resource.data.cardNo
+                    && request.resource.data.grid == resource.data.grid
+                    && request.resource.data.signature == resource.data.signature
+                    && request.resource.data.claimedBy is string
+                    && request.resource.data.claimedBy.size() >= 8;
+
+      // 初始化題庫時可短暫開啟 create，正式活動開始前建議改為 false
+      allow create: if true;
+      allow delete: if false;
+    }
+  }
+}
