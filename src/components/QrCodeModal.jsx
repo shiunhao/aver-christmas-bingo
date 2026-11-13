@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { isFirebaseConfigured } from '../config/firebaseConfig';
-import { seedCardsPoolToFirestore } from '../services/cardClaimService';
+import { resetAllGameAndCardsToNewRound } from '../services/cardClaimService';
 import { soundEngine } from '../utils/soundEngine';
 
 const PRODUCTION_PLAYER_URL = 'https://shiunhao.github.io/aver-christmas-bingo/player.html';
@@ -42,10 +42,10 @@ export default function QrCodeModal({ isOpen, onClose }) {
   const handleSeedFirestore = async () => {
     soundEngine.playClick();
     setSeeding(true);
-    setSeedStatus('正在將 100 張預製賓果卡寫入 Firebase Firestore...');
+    setSeedStatus('正在重置雲端 100 張賓果卡並通知所有手機...');
     try {
-      const count = await seedCardsPoolToFirestore();
-      setSeedStatus(`✅ 成功初始化 ${count} 張賓果卡（編號 0001 ~ 0100）至雲端！`);
+      await resetAllGameAndCardsToNewRound();
+      setSeedStatus('✅ 成功重置雲端 100 張賓果卡（0001 ~ 0100），線上玩家手機亦會自動同步更新！');
     } catch (err) {
       setSeedStatus(`⚠️ 匯入失敗：${err.message}`);
     } finally {

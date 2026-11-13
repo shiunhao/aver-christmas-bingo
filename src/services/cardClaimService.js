@@ -11,9 +11,38 @@ import { firebaseConfig, isFirebaseConfigured } from '../config/firebaseConfig';
 const STORAGE_CARD_KEY = 'aver_xmas_bingo_player_card_v1';
 const STORAGE_MARKS_KEY = 'aver_xmas_bingo_player_marks_v1';
 const STORAGE_DEVICE_KEY = 'aver_xmas_bingo_device_id_v1';
+const STORAGE_ROUND_KEY = 'aver_xmas_bingo_round_id_v1';
+const DEFAULT_ROUND_ID = 'round_1';
 
 let cachedPool = null;
 let firestoreInstance = null;
+
+export function getSavedLocalRoundId() {
+  try {
+    return localStorage.getItem(STORAGE_ROUND_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveLocalRoundId(roundId) {
+  try {
+    if (roundId) {
+      localStorage.setItem(STORAGE_ROUND_KEY, String(roundId));
+    }
+  } catch {
+    // 忽略寫入限制
+  }
+}
+
+export function clearLocalPlayerCardAndMarks() {
+  try {
+    localStorage.removeItem(STORAGE_CARD_KEY);
+    localStorage.removeItem(STORAGE_MARKS_KEY);
+  } catch {
+    // 忽略移除錯誤
+  }
+}
 
 /**
  * 取得或建立本機唯一裝置識別碼 (Device UUID)
@@ -159,6 +188,30 @@ export async function getOrClaimPlayerCard() {
       return saveCardToLocal(found, 'url_preview');
     }
   }
+
+  // 若已設定 Firebase，先取得目前雲端局次版本 (games/current.roundId)，檢查主持人是否已開啟新一局
+  let cloudRoundId = DEFAULT_ROUND_ID;
+  if (isFirebaseConfigured()) {
+    try {
+      const db = await getDb();
+      if (db) {
+        const { doc, getDoc } = await import('firebase/firestore');
+        const roundSnap = await getDoc(doc(db, 'games', 'current'));
+        if (roundSnap.exists() && roundSnap.data()?.roundId) {
+          cloudRoundId = String(roundSnap.data().roundId);
+        }
+      }
+    } catch {
+      // 無法取得雲端局次時沿用預設值
+    }
+  }
+
+  const savedRoundId = getSavedLocalRoundId();
+  // 若雲端已經開啟新一局 (與本機記錄的局次不一致)，強制清除上一局的舊卡片與紅星標記
+  if (cloudRoundId !== DEFAULT_ROUND_ID && savedRoundId !== cloudRoundId) {
+    clearLocalPlayerCardAndMarks();
+  }
+  saveLocalRoundId(cloudRoundId);
 
   // 2. 檢查 localStorage 是否已有領取過的卡片
   let localCandidate = null;
@@ -362,6 +415,69 @@ export async function seedCardsPoolToFirestore() {
   }
   await batch.commit();
   return cards.length;
+}
+
+/**
+ * 主持人端專用：一鍵開啟全新一局（先重置雲端 100 張卡池，再廣播全新 roundId 通知所有手機自動清空並重領新卡）
+ */
+export async function resetAllGameAndCardsToNewRound() {
+  if (!isFirebaseConfigured()) {
+    return null;
+  }
+  await seedCardsPoolToFirestore();
+  const db = await getDb();
+  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
+  const newRoundId = `round_${Date.now()}`;
+  await setDoc(doc(db, 'games', 'current'), {
+    roundId: newRoundId,
+    resetAt: serverTimestamp()
+  });
+  return newRoundId;
+}
+
+/**
+ * 手機玩家端專用：即時監聽主持人是否按下「重新開始」開啟新一局
+ * 若雲端出現與本機不一致的新 roundId，立刻觸發回呼清空手機並配發新卡
+ */
+export function subscribeGameRound(onNewRound) {
+  let unsubscribe = () => {};
+  let cancelled = false;
+
+  async function setupListener() {
+    if (!isFirebaseConfigured()) return;
+    try {
+      const db = await getDb();
+      if (!db || cancelled) return;
+      const { doc, onSnapshot } = await import('firebase/firestore');
+      const roundRef = doc(db, 'games', 'current');
+
+      unsubscribe = onSnapshot(
+        roundRef,
+        (snap) => {
+          if (!snap.exists()) return;
+          const newRoundId = snap.data()?.roundId ? String(snap.data().roundId) : '';
+          if (!newRoundId || newRoundId === DEFAULT_ROUND_ID) return;
+
+          const currentLocalRound = getSavedLocalRoundId();
+          if (newRoundId !== currentLocalRound) {
+            onNewRound(newRoundId);
+          }
+        },
+        (err) => {
+          console.warn('監聽新局重置狀態失敗：', err);
+        }
+      );
+    } catch (err) {
+      console.warn('無法建立局次即時監聽：', err);
+    }
+  }
+
+  setupListener();
+
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
 }
 
 /**

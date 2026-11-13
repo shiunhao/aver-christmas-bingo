@@ -7,6 +7,8 @@ import QrCodeModal from './components/QrCodeModal';
 import TopLineOrnament from './components/TopLineOrnament';
 import { soundEngine } from './utils/soundEngine';
 import { getBingoLetter, getNumberPhrase } from './utils/christmasPhrases';
+import { resetAllGameAndCardsToNewRound } from './services/cardClaimService';
+import { isFirebaseConfigured } from './config/firebaseConfig';
 
 const STORAGE_KEY = 'aver_xmas_bingo_drawn_v1';
 const TOTAL_NUMBERS = 75;
@@ -60,6 +62,8 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [inspectCardNo, setInspectCardNo] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetPhonesToo, setResetPhonesToo] = useState(true);
+  const [isResettingCloud, setIsResettingCloud] = useState(false);
   const [showBingoModal, setShowBingoModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -191,7 +195,7 @@ export default function App() {
         setShowBingoModal(true);
       } else if (e.key === 'Escape') {
         setShowHistory(false);
-        setShowResetConfirm(false);
+        if (!isResettingCloud) setShowResetConfirm(false);
         setShowBingoModal(false);
         setShowQrModal(false);
       }
@@ -199,7 +203,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDrawNext, showHistory, showResetConfirm, showBingoModal, showQrModal]);
+  }, [handleDrawNext, showHistory, showResetConfirm, showBingoModal, showQrModal, isResettingCloud]);
 
   // 切換背景音樂
   const toggleMusic = () => {
@@ -230,16 +234,37 @@ export default function App() {
     }
   };
 
-  // 確認重新開始
-  const confirmReset = () => {
+  // 確認重新開始（同時支援一鍵重置所有手機端賓果卡與雲端卡池）
+  const confirmReset = async () => {
+    if (isResettingCloud) return;
     if (rollTimerRef.current) clearTimeout(rollTimerRef.current);
     soundEngine.playClick();
+
+    let cloudResetOk = false;
+    if (resetPhonesToo && isFirebaseConfigured()) {
+      setIsResettingCloud(true);
+      try {
+        await resetAllGameAndCardsToNewRound();
+        cloudResetOk = true;
+      } catch (err) {
+        console.warn('雲端與手機卡片重置失敗：', err);
+      } finally {
+        setIsResettingCloud(false);
+      }
+    }
+
     setIsRolling(false);
     setJustRevealed(false);
     setDrawnNumbers([]);
     setDisplayNumber(null);
     setShowResetConfirm(false);
-    setCustomEmote({ char: 1, text: '🔄 新的一局開始囉！祝大家好運！' });
+    setCustomEmote({
+      char: 1,
+      text: cloudResetOk
+        ? '🔄 全場已開局！所有手機卡片皆已同步重置！'
+        : '🔄 新的一局開始囉！祝大家好運！',
+      id: Date.now()
+    });
   };
 
   // 觸發角色彩蛋對話
@@ -475,13 +500,9 @@ export default function App() {
           onClick={(e) => {
             e.stopPropagation();
             soundEngine.playClick();
-            if (drawCount === 0) {
-              setCustomEmote({ char: 0, text: '✨ 目前已經是全新的一局囉！', id: Date.now() });
-            } else {
-              setShowResetConfirm(true);
-            }
+            setShowResetConfirm(true);
           }}
-          title="清空已開出號碼，重新開始新的一局"
+          title="清空已開出號碼，並可同步重置所有手機卡片開啟新一局"
         />
 
         {/* 5. 右下角「禮物盒 + 已開號碼 X / 75 ▶」木牌 (座標 x=806..996, y=476..558) */}
@@ -567,21 +588,42 @@ export default function App() {
           彈出視窗：重新開始防誤觸確認視窗
       ==================================================================== */}
       {showResetConfirm && (
-        <div className="pixel-modal-backdrop" onClick={() => setShowResetConfirm(false)}>
+        <div
+          className="pixel-modal-backdrop"
+          onClick={() => !isResettingCloud && setShowResetConfirm(false)}
+        >
           <div className="pixel-modal-card confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pixel-modal-header">
               <div className="pixel-modal-title">⚠️ 確定要重新開始嗎？</div>
             </div>
             <p className="confirm-modal-desc">
-              目前已開出 <strong>{drawCount}</strong> 個號碼（最新號碼：
-              <strong>{latestNumber}</strong>）。
-              <br />
-              重新開始將會清空所有已開出紀錄，回到第 0 抽狀態。
+              {drawCount > 0 ? (
+                <>
+                  目前已開出 <strong>{drawCount}</strong> 個號碼（最新號碼：
+                  <strong>{latestNumber}</strong>）。
+                  <br />
+                  重新開始將會清空所有已開出紀錄，回到第 0 抽狀態。
+                </>
+              ) : (
+                <>目前主畫面尚未抽號（第 0 抽狀態）。</>
+              )}
             </p>
+            {isFirebaseConfigured() && (
+              <label className="reset-phones-checkbox">
+                <input
+                  type="checkbox"
+                  checked={resetPhonesToo}
+                  onChange={(e) => setResetPhonesToo(e.target.checked)}
+                  disabled={isResettingCloud}
+                />
+                <span>📱 同步重置所有玩家手機卡片與紅格進度（重發新一局卡片）</span>
+              </label>
+            )}
             <div className="confirm-modal-actions">
               <button
                 type="button"
                 className="pixel-secondary-btn"
+                disabled={isResettingCloud}
                 onClick={() => {
                   soundEngine.playClick();
                   setShowResetConfirm(false);
@@ -589,8 +631,13 @@ export default function App() {
               >
                 取消返回
               </button>
-              <button type="button" className="pixel-danger-btn" onClick={confirmReset}>
-                ↻ 確定重新開始
+              <button
+                type="button"
+                className="pixel-danger-btn"
+                disabled={isResettingCloud}
+                onClick={confirmReset}
+              >
+                {isResettingCloud ? '⏳ 正在重置全場手機與雲端...' : '↻ 確定重新開始'}
               </button>
             </div>
           </div>

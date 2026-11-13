@@ -1654,3 +1654,27 @@ body,
   filter: brightness(1.12);
 }
 
+/* 確認重新開始彈窗：同步重置手機卡片勾選框 */
+.reset-phones-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  background: rgba(25, 68, 36, 0.45);
+  border: 1.5px solid rgba(132, 227, 144, 0.55);
+  border-radius: 10px;
+  color: #e9ffec;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.reset-phones-checkbox input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #7dff8b;
+  cursor: pointer;
+}
+

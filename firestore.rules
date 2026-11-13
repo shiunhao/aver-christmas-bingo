@@ -1,15 +1,18 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 全域活動局次文件：games/current（用於同步主持人按下「重新開始」時的跨裝置重置通知）
+    match /games/{gameId} {
+      allow get: if true;
+      allow write: if true;
+    }
+
     // 賓果卡池集合：cards/{slotId} (slotId 為 "0001" ~ "0100")
     match /cards/{slotId} {
-      // 允許前端讀取單張卡片或即時監聽戰況
       allow get: if true;
       allow list: if true;
 
-      // 允許兩種安全更新情境，嚴格禁止竄改卡片盤面與卡號本身：
-      // 1. 首次原子搶卡：原本 claimed == false -> 更新為 claimed == true
-      // 2. 已領卡的同裝置回報目前手機標記進度 (reportedLines, reportedMarked, reportedMarkedCount, reportedAt)
+      // 允許原子搶卡、同裝置進度回報與主持人開啟新一局時重置卡池
       allow update: if request.resource.data.cardId == resource.data.cardId
                     && request.resource.data.cardNo == resource.data.cardNo
                     && request.resource.data.grid == resource.data.grid
@@ -27,9 +30,12 @@ service cloud.firestore {
                         && request.resource.data.claimed == true
                         && request.resource.data.claimedBy == resource.data.claimedBy
                       )
+                      ||
+                      (
+                        request.resource.data.claimed == false
+                      )
                     );
 
-      // 初始化題庫時可短暫開啟 create，正式活動開始前建議改為 false
       allow create: if true;
       allow delete: if false;
     }

@@ -5,7 +5,10 @@ import {
   getOrClaimPlayerCard,
   loadSavedMarks,
   saveMarksToLocal,
-  syncPlayerProgressToCloud
+  syncPlayerProgressToCloud,
+  clearLocalPlayerCardAndMarks,
+  saveLocalRoundId,
+  subscribeGameRound
 } from './services/cardClaimService';
 import { evaluateBingoLines } from './utils/bingoEngine';
 import { soundEngine } from './utils/soundEngine';
@@ -48,15 +51,21 @@ export default function PlayerApp() {
   const [celebrationBanner, setCelebrationBanner] = useState(null);
   // 清空標記確認小視窗
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // 主持人按下「重新開始」時的溫馨換卡通知
+  const [roundResetToast, setRoundResetToast] = useState(false);
 
   // 記錄上一次已完成的連線 ID 集合，用來偵測「新達成的連線」
   const prevLineIdsRef = useRef(new Set());
   const celebrationTimerRef = useRef(null);
+  const resetToastTimerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
+  const handlingRoundRef = useRef('');
 
-  // 初始化自動領卡或還原已綁定卡片
+  // 初始化自動領卡或還原已綁定卡片，並於載入完成後開始監聽主持人的「重新開始」訊號
   useEffect(() => {
     let mounted = true;
+    let unsubscribeRound = () => {};
+
     async function initCard() {
       try {
         setLoading(true);
@@ -78,6 +87,53 @@ export default function PlayerApp() {
         setTimeout(() => {
           isInitialLoadRef.current = false;
         }, 150);
+
+        // 監聽主持人按下「重新開始」時的全新局次通知 (games/current.roundId)
+        unsubscribeRound = subscribeGameRound(async (newRoundId) => {
+          if (!mounted || handlingRoundRef.current === newRoundId) return;
+          handlingRoundRef.current = newRoundId;
+          saveLocalRoundId(newRoundId);
+          clearLocalPlayerCardAndMarks();
+          setCelebrationBanner(null);
+          setShowClearConfirm(false);
+          setLastClickedIdx(null);
+          prevLineIdsRef.current = new Set();
+
+          const freshMarks = Array(25).fill(false);
+          freshMarks[12] = true;
+          setMarked(freshMarks);
+          setLoading(true);
+
+          // 輕微錯開數十手機同時搶卡的毫秒峰值
+          const jitterMs = 80 + Math.floor(Math.random() * 480);
+          await new Promise((r) => setTimeout(r, jitterMs));
+          if (!mounted) return;
+
+          try {
+            const newClaimed = await getOrClaimPlayerCard();
+            if (!mounted) return;
+            setCard(newClaimed);
+            setMarked(freshMarks);
+            setLoading(false);
+            if (newClaimed.claimMode !== 'url_preview') {
+              syncPlayerProgressToCloud(newClaimed.cardNo, 0, freshMarks);
+            }
+            soundEngine.playTreeChime();
+            setRoundResetToast(true);
+            if (resetToastTimerRef.current) clearTimeout(resetToastTimerRef.current);
+            resetToastTimerRef.current = setTimeout(() => {
+              setRoundResetToast(false);
+            }, 3800);
+          } catch (err) {
+            if (!mounted) return;
+            setErrorMsg(
+              err.message === 'ALL_CARDS_CLAIMED'
+                ? '目前 100 張活動賓果卡已全數發放完畢，請洽現場福委工作人員協助！'
+                : '重新領取賓果卡時發生異常，請重新整理頁面。'
+            );
+            setLoading(false);
+          }
+        });
       } catch (err) {
         if (!mounted) return;
         if (err.message === 'ALL_CARDS_CLAIMED') {
@@ -91,7 +147,9 @@ export default function PlayerApp() {
     initCard();
     return () => {
       mounted = false;
+      unsubscribeRound();
       if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+      if (resetToastTimerRef.current) clearTimeout(resetToastTimerRef.current);
     };
   }, []);
 
@@ -426,7 +484,17 @@ export default function PlayerApp() {
           </div>
         )}
 
-        {/* 5. 底部雪地溫馨小叮嚀 */}
+        {/* 5. 主持人開啟新一局時的自動換卡溫馨提示 */}
+        {roundResetToast && (
+          <div
+            className="player-round-reset-toast"
+            onClick={() => setRoundResetToast(false)}
+          >
+            🔄 主持人已重新開局！已為您配發全新卡片 #{card?.cardNo}
+          </div>
+        )}
+
+        {/* 6. 底部雪地溫馨小叮嚀 */}
         <div className="player-bottom-footer">
           <span>✨ 點選開出號碼標記紅星・重整網頁不會換卡 ✨</span>
         </div>

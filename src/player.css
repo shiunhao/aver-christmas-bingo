@@ -592,3 +592,35 @@ body,
   color: #fff9e6;
   border-color: #ffd166;
 }
+
+/* 主持人重新開局時的手機自動重置溫馨提示 */
+.player-round-reset-toast {
+  position: absolute;
+  top: 7.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  width: 88%;
+  text-align: center;
+  background: linear-gradient(180deg, #215e32 0%, #143f20 100%);
+  border: 2px solid #ffe066;
+  color: #fff9e6;
+  padding: 2.2cqw 3.2cqw;
+  border-radius: 3cqw;
+  font-size: clamp(12px, 3.4cqw, 16px);
+  font-weight: 900;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.72), 0 0 16px rgba(255, 215, 0, 0.55);
+  animation: roundToastPop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1);
+  cursor: pointer;
+}
+
+@keyframes roundToastPop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -14px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
