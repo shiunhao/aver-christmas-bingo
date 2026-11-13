@@ -16,13 +16,20 @@ export default function HistoryModal({
   isOpen,
   onClose,
   drawnNumbers,
-  onTriggerBingo
+  onTriggerBingo,
+  initialCardNo = ''
 }) {
   const [selectedForCheck, setSelectedForCheck] = useState([]);
   const [cardQuery, setCardQuery] = useState('');
   const [cardsPool, setCardsPool] = useState([]);
   const [verifiedResult, setVerifiedResult] = useState(null);
   const [verifyError, setVerifyError] = useState('');
+
+  useEffect(() => {
+    if (isOpen && initialCardNo) {
+      setCardQuery(initialCardNo);
+    }
+  }, [isOpen, initialCardNo]);
 
   useEffect(() => {
     if (isOpen && cardsPool.length === 0) {

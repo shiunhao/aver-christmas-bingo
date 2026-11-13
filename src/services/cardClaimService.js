@@ -306,3 +306,54 @@ export async function seedCardsPoolToFirestore() {
   await batch.commit();
   return cards.length;
 }
+
+/**
+ * 主持人端專用：即時監聽 Firebase Firestore 中已被玩家領取的卡片 (claimed == true)
+ * 回傳 unsubscribe 函式
+ */
+export function subscribeClaimedCards(onUpdate) {
+  let unsubscribe = () => {};
+  let cancelled = false;
+
+  async function setupListener() {
+    if (!isFirebaseConfigured()) {
+      onUpdate({ claimedCardNos: new Set(), firebaseActive: false });
+      return;
+    }
+    try {
+      const db = await getDb();
+      if (!db || cancelled) return;
+      const { collection, onSnapshot } = await import('firebase/firestore');
+      const colRef = collection(db, 'cards');
+
+      unsubscribe = onSnapshot(
+        colRef,
+        (snapshot) => {
+          const claimedSet = new Set();
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data && data.claimed) {
+              claimedSet.add(data.cardNo || docSnap.id);
+            }
+          });
+          onUpdate({ claimedCardNos: claimedSet, firebaseActive: true });
+        },
+        (err) => {
+          console.warn('監聽雲端已領卡片狀態異常，切換為全卡池計算：', err);
+          onUpdate({ claimedCardNos: new Set(), firebaseActive: false });
+        }
+      );
+    } catch (err) {
+      console.warn('無法建立 Firestore 即時監聽：', err);
+      onUpdate({ claimedCardNos: new Set(), firebaseActive: false });
+    }
+  }
+
+  setupListener();
+
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+}
+

@@ -4,6 +4,7 @@ import LivingSceneCanvas from './components/LivingSceneCanvas';
 import HistoryModal from './components/HistoryModal';
 import BingoCelebrationModal from './components/BingoCelebrationModal';
 import QrCodeModal from './components/QrCodeModal';
+import TopLineOrnament from './components/TopLineOrnament';
 import { soundEngine } from './utils/soundEngine';
 import { getBingoLetter, getNumberPhrase } from './utils/christmasPhrases';
 
@@ -50,14 +51,14 @@ export default function App() {
   const [isRolling, setIsRolling] = useState(false);
   const [justRevealed, setJustRevealed] = useState(false);
 
-  // 音訊與全螢幕控制狀態
+  // 音訊與全螢幕控制狀態 (語音報號一律關閉)
   const [musicOn, setMusicOn] = useState(true);
   const [sfxOn, setSfxOn] = useState(true);
-  const [voiceOn, setVoiceOn] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // 彈窗狀態
   const [showHistory, setShowHistory] = useState(false);
+  const [inspectCardNo, setInspectCardNo] = useState('');
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showBingoModal, setShowBingoModal] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -144,7 +145,6 @@ export default function App() {
         setIsRolling(false);
         setJustRevealed(true);
         soundEngine.playDrawReveal();
-        soundEngine.speakNumber(targetNumber, getNumberPhrase(targetNumber));
 
         // 輕量星塵紙花從黑板中央噴發
         confetti({
@@ -217,15 +217,6 @@ export default function App() {
     setSfxOn(next);
     soundEngine.setSfxEnabled(next);
     if (next) soundEngine.playClick();
-  };
-
-  // 切換語音報號
-  const toggleVoice = () => {
-    soundEngine.ensureContext();
-    const next = !voiceOn;
-    setVoiceOn(next);
-    soundEngine.setVoiceEnabled(next);
-    soundEngine.playClick();
   };
 
   // 切換全螢幕
@@ -358,7 +349,17 @@ export default function App() {
           )}
         </button>
 
-        {/* 頂部隱藏式快捷輔助工具列 (滑鼠移近頂部或點擊標題時方便使用：玩家 QR Code、語音報號 & BINGO 煙火) */}
+        {/* 左上角：聖誕金鈴鐺・馴鹿・聖誕老人最高連線數動態掛飾 */}
+        <TopLineOrnament
+          drawnNumbers={drawnNumbers}
+          isRolling={isRolling}
+          onInspectCard={(cardNo) => {
+            setInspectCardNo(cardNo);
+            setShowHistory(true);
+          }}
+        />
+
+        {/* 頂部隱藏式快捷輔助工具列 (玩家 QR Code & BINGO 煙火，已隱藏語音報號) */}
         <div className="host-quick-pills" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
@@ -370,14 +371,6 @@ export default function App() {
             title="展開大螢幕 QR Code 讓全場掃描領取專屬賓果卡 (快捷鍵 Q)"
           >
             📱 掃碼領卡 (Q)
-          </button>
-          <button
-            type="button"
-            className={`quick-pill ${voiceOn ? 'active' : ''}`}
-            onClick={toggleVoice}
-            title="開啟後每次開出號碼會自動以中文語音播報號碼與吉祥話"
-          >
-            🗣️ 語音報號：{voiceOn ? '開' : '關'}
           </button>
           <button
             type="button"
@@ -558,8 +551,12 @@ export default function App() {
       ==================================================================== */}
       <HistoryModal
         isOpen={showHistory}
-        onClose={() => setShowHistory(false)}
+        onClose={() => {
+          setShowHistory(false);
+          setInspectCardNo('');
+        }}
         drawnNumbers={drawnNumbers}
+        initialCardNo={inspectCardNo}
         onTriggerBingo={() => {
           soundEngine.playBingoFanfare();
           setShowBingoModal(true);
