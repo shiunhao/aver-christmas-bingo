@@ -10,11 +10,6 @@ export default function TopLineOrnament({
 }) {
   const [allCards, setAllCards] = useState([]);
   const [claimedCardsMap, setClaimedCardsMap] = useState(new Map());
-  // 三種計算視角：
-  // 'live_claimed'     -> 現場已領卡片即時手機回報（若尚無人領卡則自動看全卡池開獎）
-  // 'official_claimed' -> 僅看已領卡片依大螢幕實際開出號碼核對
-  // 'all_pool'         -> 全部 100 張預製卡依大螢幕實際開出號碼試算
-  const [viewMode, setViewMode] = useState('live_claimed');
   const [showDropdown, setShowDropdown] = useState(false);
 
   // 當最高連線數突破新高時的慶祝搖鈴動畫狀態
@@ -46,58 +41,43 @@ export default function TopLineOrnament({
     };
   }, []);
 
-  // 計算當前戰況統計
+  // 計算當前戰況統計（優先取現場已領取卡片的即時回報進度；若無人領卡則自動試算全卡池）
   const stats = useMemo(() => {
     if (allCards.length === 0) {
       return {
         maxLines: 0,
         leaders: [],
-        almostCount: 0,
-        activeMode: 'all_pool',
-        claimedCount: 0,
-        anyOfficialMatch: false
+        almostCount: 0
       };
     }
 
-    const claimedCount = claimedCardsMap.size;
-    // 若尚無人領卡，自動降級為全卡池大螢幕抽號試算
-    const effectiveMode =
-      claimedCount === 0
-        ? 'all_pool'
-        : viewMode;
-
-    const targetCards =
-      effectiveMode === 'all_pool'
-        ? allCards
-        : allCards.filter((c) => claimedCardsMap.has(c.cardNo));
+    const hasClaimed = claimedCardsMap.size > 0;
+    const targetCards = hasClaimed
+      ? allCards.filter((c) => claimedCardsMap.has(c.cardNo))
+      : allCards;
 
     let maxLines = 0;
     let leaders = [];
     let almostCount = 0;
-    let anyOfficialMatch = false;
 
     for (const card of targetCards) {
-      const officialRes = verifyCardAgainstDrawnNumbers(card, drawnNumbers);
       const cloudInfo = claimedCardsMap.get(card.cardNo);
+      let cardScore = 0;
+      let isAlmost = false;
 
-      // 若該玩家手機有送回即時標記陣列，重算手機連線與聽牌；否則取 reportedLines
-      let playerLines = cloudInfo ? cloudInfo.reportedLines || 0 : 0;
-      let playerAlmost = 0;
-      if (cloudInfo && Array.isArray(cloudInfo.reportedMarked) && cloudInfo.reportedMarked.length === 25) {
-        const playerEval = evaluateBingoCard(cloudInfo.reportedMarked);
-        playerLines = playerEval.lineCount;
-        playerAlmost = playerEval.almostLines.length;
+      if (hasClaimed && cloudInfo) {
+        if (Array.isArray(cloudInfo.reportedMarked) && cloudInfo.reportedMarked.length === 25) {
+          const playerEval = evaluateBingoCard(cloudInfo.reportedMarked);
+          cardScore = playerEval.lineCount;
+          isAlmost = playerEval.almostLines.length > 0;
+        } else {
+          cardScore = cloudInfo.reportedLines || 0;
+        }
+      } else {
+        const officialRes = verifyCardAgainstDrawnNumbers(card, drawnNumbers);
+        cardScore = officialRes.lineCount;
+        isAlmost = officialRes.almostLines.length > 0;
       }
-
-      const cardScore =
-        effectiveMode === 'live_claimed'
-          ? playerLines
-          : officialRes.lineCount;
-
-      const isAlmost =
-        effectiveMode === 'live_claimed'
-          ? playerAlmost > 0 || officialRes.almostLines.length > 0
-          : officialRes.almostLines.length > 0;
 
       if (isAlmost && cardScore === 0) {
         almostCount++;
@@ -105,39 +85,20 @@ export default function TopLineOrnament({
 
       if (cardScore > maxLines) {
         maxLines = cardScore;
-        leaders = [
-          {
-            cardNo: card.cardNo,
-            lineCount: cardScore,
-            officialLines: officialRes.lineCount,
-            playerLines,
-            isOfficialVerified: cardScore > 0 && officialRes.lineCount >= cardScore
-          }
-        ];
+        leaders = [{ cardNo: card.cardNo, lineCount: cardScore }];
       } else if (cardScore === maxLines && maxLines > 0) {
-        leaders.push({
-          cardNo: card.cardNo,
-          lineCount: cardScore,
-          officialLines: officialRes.lineCount,
-          playerLines,
-          isOfficialVerified: cardScore > 0 && officialRes.lineCount >= cardScore
-        });
+        leaders.push({ cardNo: card.cardNo, lineCount: cardScore });
       }
     }
-
-    anyOfficialMatch = leaders.some((l) => l.isOfficialVerified);
 
     return {
       maxLines,
       leaders,
-      almostCount,
-      activeMode: effectiveMode,
-      claimedCount,
-      anyOfficialMatch
+      almostCount
     };
-  }, [allCards, claimedCardsMap, viewMode, drawnNumbers]);
+  }, [allCards, claimedCardsMap, drawnNumbers]);
 
-  // 偵測「最高連線數突破新高」瞬間（無論是抽號達成還是玩家手機回報突破皆即時觸發慶祝！）
+  // 偵測「最高連線數突破新高」瞬間，觸發聖誕雙鈴搖響與慶祝彩帶動畫
   useEffect(() => {
     if (isRolling) return;
 
@@ -153,7 +114,6 @@ export default function TopLineOrnament({
       setIsRinging(true);
       setBreakthroughToast({
         lines: stats.maxLines,
-        count: stats.leaders.length,
         id: Date.now()
       });
 
@@ -169,23 +129,16 @@ export default function TopLineOrnament({
     } else if (stats.maxLines < prevMaxLineRef.current) {
       prevMaxLineRef.current = stats.maxLines;
     }
-  }, [stats.maxLines, stats.leaders.length, isRolling]);
+  }, [stats.maxLines, isRolling]);
 
   // 根據最高連線數決定聖誕主題裝飾等級
   const tierInfo = useMemo(() => {
     const m = stats.maxLines;
-    const modeTag =
-      stats.activeMode === 'live_claimed'
-        ? `現場 ${stats.claimedCount} 人即時`
-        : stats.activeMode === 'official_claimed'
-        ? `已開核對 ${stats.claimedCount} 人`
-        : '全場預估戰況';
-
     if (m === 0) {
       return {
         tierClass: 'tier-0',
         characterEmoji: '🔔',
-        badgeTitle: `聖誕連線戰況・${modeTag}`,
+        badgeTitle: '聖誕連線戰況',
         mainText:
           stats.almostCount > 0
             ? `🔥 ${stats.almostCount} 張卡聽牌中`
@@ -196,41 +149,36 @@ export default function TopLineOrnament({
       return {
         tierClass: 'tier-1',
         characterEmoji: '🔔',
-        badgeTitle: `首開紀錄・金鈴響起（${modeTag}）`,
-        mainText: `最高 1 條線 (${stats.leaders.length}張)`
+        badgeTitle: '首開紀錄・金鈴響起'
       };
     }
     if (m === 2) {
       return {
         tierClass: 'tier-2',
         characterEmoji: '🦌',
-        badgeTitle: `麋鹿奔馳・雙線達成（${modeTag}）`,
-        mainText: `最高 2 條線 (${stats.leaders.length}張)`
+        badgeTitle: '麋鹿奔馳・雙線達成'
       };
     }
     if (m === 3) {
       return {
         tierClass: 'tier-3',
         characterEmoji: '🦌',
-        badgeTitle: `馴鹿雪橇・三線聽牌（${modeTag}）`,
-        mainText: `最高 3 條線 (${stats.leaders.length}張)`
+        badgeTitle: '馴鹿雪橇・三線聽牌'
       };
     }
     if (m === 4) {
       return {
         tierClass: 'tier-4',
         characterEmoji: '🎅',
-        badgeTitle: `聖誕老公公降臨！（${modeTag}）`,
-        mainText: `最高 4 條線 (${stats.leaders.length}張)`
+        badgeTitle: '聖誕老公公降臨！'
       };
     }
     return {
       tierClass: 'tier-5',
       characterEmoji: '🎅',
-      badgeTitle: `奇蹟大滿貫・聖誕狂歡（${modeTag}）`,
-      mainText: `最高 ${m} 條線 (${stats.leaders.length}張)`
+      badgeTitle: '奇蹟大滿貫・聖誕狂歡'
     };
-  }, [stats.maxLines, stats.almostCount, stats.leaders.length, stats.activeMode, stats.claimedCount]);
+  }, [stats.maxLines, stats.almostCount]);
 
   return (
     <div
@@ -239,7 +187,7 @@ export default function TopLineOrnament({
       }`}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* 聖誕花環金鈴鐺主掛牌（點擊可展開查看領先卡號清單） */}
+      {/* 聖誕花環金鈴鐺主掛牌（點擊可查看最高連線的卡片編號） */}
       <button
         type="button"
         className="ornament-main-plaque"
@@ -247,7 +195,7 @@ export default function TopLineOrnament({
           soundEngine.playClick();
           setShowDropdown((prev) => !prev);
         }}
-        title="點擊查看目前達成最高連線的卡片編號清單與切換核對模式"
+        title="點擊查看最高連線數的卡片編號"
       >
         {/* 頂部松枝與紅絲帶蝴蝶結裝飾 */}
         <div className="ornament-holly-garland" aria-hidden="true">
@@ -312,23 +260,11 @@ export default function TopLineOrnament({
             {stats.maxLines > 0 ? (
               <>
                 最高 <strong className="ornament-line-num">{stats.maxLines}</strong> 條線
-                <span className="ornament-card-count">({stats.leaders.length}張)</span>
               </>
             ) : (
               <span className="ornament-zero-text">{tierInfo.mainText}</span>
             )}
           </div>
-          {stats.maxLines > 0 && stats.activeMode === 'live_claimed' && (
-            <div
-              className={`ornament-verify-hint ${
-                stats.anyOfficialMatch ? 'is-verified' : 'is-unverified'
-              }`}
-            >
-              {stats.anyOfficialMatch
-                ? '✅ 已開獎號碼核對吻合'
-                : '📡 玩家手機即時回報'}
-            </div>
-          )}
         </div>
 
         {/* 環繞閃耀星芒粒子（當有連線或搖鈴時浮現） */}
@@ -347,17 +283,20 @@ export default function TopLineOrnament({
         <div className="ornament-breakthrough-ribbon" key={breakthroughToast.id}>
           <span className="ribbon-icon">{tierInfo.characterEmoji}</span>
           <span>
-            戰況升級！已有 <strong>{breakthroughToast.count}</strong> 張卡達成{' '}
-            <strong>{breakthroughToast.lines} 條連線</strong>！
+            戰況升級！現場已達成 <strong>{breakthroughToast.lines} 條連線</strong>！
           </span>
         </div>
       )}
 
-      {/* 點擊展開：領先卡號榜單與統計模式切換卷軸 */}
+      {/* 點擊展開：僅單純顯示最高連線數的卡片以及編號 */}
       {showDropdown && (
         <div className="ornament-leaders-popover">
           <div className="popover-header-row">
-            <span>🏆 即時連線排行榜</span>
+            <span>
+              {stats.maxLines > 0
+                ? `最高 ${stats.maxLines} 條線卡片`
+                : '尚無連線卡片'}
+            </span>
             <button
               type="button"
               className="popover-close"
@@ -367,72 +306,25 @@ export default function TopLineOrnament({
             </button>
           </div>
 
-          {stats.claimedCount > 0 && (
-            <div className="popover-filter-row">
-              <button
-                type="button"
-                className={`popover-filter-btn ${viewMode === 'live_claimed' ? 'active' : ''}`}
-                onClick={() => setViewMode('live_claimed')}
-                title="即時反映玩家手機點選連出的最高線數"
-              >
-                📡 手機即時 ({stats.claimedCount})
-              </button>
-              <button
-                type="button"
-                className={`popover-filter-btn ${viewMode === 'official_claimed' ? 'active' : ''}`}
-                onClick={() => setViewMode('official_claimed')}
-                title="僅計算主持人已開出號碼構成的官方連線"
-              >
-                🎯 官方核對
-              </button>
-              <button
-                type="button"
-                className={`popover-filter-btn ${viewMode === 'all_pool' ? 'active' : ''}`}
-                onClick={() => setViewMode('all_pool')}
-                title="全部 100 張預製卡依開獎進度試算"
-              >
-                🃏 全100張
-              </button>
-            </div>
-          )}
-
           {stats.maxLines === 0 ? (
-            <div className="popover-empty">
-              目前尚未達成 5 格連線
-              {stats.almostCount > 0 && `（已有 ${stats.almostCount} 張卡聽牌中！）`}
-            </div>
+            <div className="popover-empty">目前尚未有卡片達成連線</div>
           ) : (
-            <div className="popover-leaders-list">
-              <div className="popover-summary-note">
-                共 <strong>{stats.leaders.length}</strong> 張卡達成{' '}
-                <strong>{stats.maxLines} 條線</strong>（點擊卡號看官方盤面）：
-              </div>
-              <div className="popover-chips-wrap">
-                {stats.leaders.map((item) => (
-                  <button
-                    key={item.cardNo}
-                    type="button"
-                    className={`leader-card-chip ${
-                      item.isOfficialVerified ? 'verified' : ''
-                    }`}
-                    onClick={() => {
-                      soundEngine.playClick();
-                      setShowDropdown(false);
-                      onInspectCard?.(item.cardNo);
-                    }}
-                    title={`手機回報 ${item.playerLines} 線 / 官方已開核對 ${item.officialLines} 線（點擊開啟詳細盤面）`}
-                  >
-                    #{item.cardNo}
-                    {stats.activeMode === 'live_claimed' && (
-                      <span className="chip-verify-sub">
-                        {item.isOfficialVerified
-                          ? ' ✓'
-                          : ` (核${item.officialLines})`}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+            <div className="popover-chips-wrap">
+              {stats.leaders.map((item) => (
+                <button
+                  key={item.cardNo}
+                  type="button"
+                  className="leader-card-chip"
+                  onClick={() => {
+                    soundEngine.playClick();
+                    setShowDropdown(false);
+                    onInspectCard?.(item.cardNo);
+                  }}
+                  title="點擊查看此卡號盤面"
+                >
+                  編號 {item.cardNo}
+                </button>
+              ))}
             </div>
           )}
         </div>

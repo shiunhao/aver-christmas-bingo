@@ -1470,23 +1470,6 @@ body,
   color: #f2dcc2;
 }
 
-.ornament-verify-hint {
-  font-size: calc(var(--u) * 1.02);
-  font-weight: 800;
-  margin-top: calc(var(--u) * 0.15);
-  letter-spacing: 0.02em;
-}
-
-.ornament-verify-hint.is-verified {
-  color: #84f596;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
-}
-
-.ornament-verify-hint.is-unverified {
-  color: #ffe08a;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7);
-}
-
 /* 環繞閃耀星芒與雪花粒子 */
 .ornament-sparkles {
   position: absolute;
@@ -1573,16 +1556,16 @@ body,
   }
 }
 
-/* 點擊展開：領先卡號榜單小視窗 */
+/* 點擊展開：僅單純顯示最高連線卡片編號小木牌 */
 .ornament-leaders-popover {
-  width: calc(var(--u) * 29);
+  width: calc(var(--u) * 23);
   background: linear-gradient(180deg, #381808 0%, #210d04 100%);
   border: calc(var(--u) * 0.2) solid #d49b5d;
   border-radius: calc(var(--u) * 1);
-  padding: calc(var(--u) * 1) calc(var(--u) * 1.2);
+  padding: calc(var(--u) * 0.95) calc(var(--u) * 1.15);
   color: #f7e4c8;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.85);
-  font-size: calc(var(--u) * 1.15);
+  font-size: calc(var(--u) * 1.18);
   z-index: 30;
 }
 
