@@ -4,7 +4,8 @@ import PlayerSnowCanvas from './components/PlayerSnowCanvas';
 import {
   getOrClaimPlayerCard,
   loadSavedMarks,
-  saveMarksToLocal
+  saveMarksToLocal,
+  syncPlayerProgressToCloud
 } from './services/cardClaimService';
 import { evaluateBingoLines } from './utils/bingoEngine';
 import { soundEngine } from './utils/soundEngine';
@@ -68,6 +69,12 @@ export default function PlayerApp() {
         setCard(claimed);
         setMarked(savedMarks);
         setLoading(false);
+
+        // 將玩家還原或剛取得的卡片進度立即同步至雲端，讓大螢幕可即時反映戰況
+        if (claimed.claimMode !== 'url_preview') {
+          syncPlayerProgressToCloud(claimed.cardNo, initialEval.lineCount, savedMarks);
+        }
+
         setTimeout(() => {
           isInitialLoadRef.current = false;
         }, 150);
@@ -164,12 +171,16 @@ export default function PlayerApp() {
     nextMarked[12] = true;
 
     setMarked(nextMarked);
-    if (card) {
-      saveMarksToLocal(card.cardNo, nextMarked);
-    }
 
     // 評估更新後的連線數
     const nextEval = evaluateBingoLines(nextMarked);
+
+    if (card) {
+      saveMarksToLocal(card.cardNo, nextMarked);
+      if (card.claimMode !== 'url_preview') {
+        syncPlayerProgressToCloud(card.cardNo, nextEval.lineCount, nextMarked);
+      }
+    }
     const currentLineIds = new Set(nextEval.completedLines.map((l) => l.id));
     const newlyCompleted = nextEval.completedLines.filter(
       (l) => !prevLineIdsRef.current.has(l.id)
@@ -216,6 +227,9 @@ export default function PlayerApp() {
     setCelebrationBanner(null);
     if (card) {
       saveMarksToLocal(card.cardNo, reset);
+      if (card.claimMode !== 'url_preview') {
+        syncPlayerProgressToCloud(card.cardNo, 0, reset);
+      }
     }
     setShowClearConfirm(false);
   };

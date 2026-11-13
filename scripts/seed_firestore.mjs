@@ -42,7 +42,11 @@ async function main() {
       signature: card.signature,
       claimed: false,
       claimedBy: null,
-      claimedAt: null
+      claimedAt: null,
+      reportedLines: 0,
+      reportedMarkedCount: 1,
+      reportedMarked: null,
+      reportedAt: null
     });
   }
 
