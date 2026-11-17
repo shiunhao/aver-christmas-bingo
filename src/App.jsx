@@ -5,6 +5,7 @@ import HistoryModal from './components/HistoryModal';
 import BingoCelebrationModal from './components/BingoCelebrationModal';
 import QrCodeModal from './components/QrCodeModal';
 import TopLineOrnament from './components/TopLineOrnament';
+import { PixelSparkle, PixelUiIcon } from './components/PixelOrnamentArt';
 import { soundEngine } from './utils/soundEngine';
 import { getBingoLetter, getNumberPhrase } from './utils/christmasPhrases';
 import { resetAllGameAndCardsToNewRound } from './services/cardClaimService';
@@ -334,7 +335,9 @@ export default function App() {
         >
           {!musicOn && (
             <span className="wood-btn-override">
-              <span className="override-icon">🎵</span>
+              <span className="override-icon">
+                <PixelUiIcon name="music" />
+              </span>
               <span>音樂 關</span>
             </span>
           )}
@@ -351,7 +354,9 @@ export default function App() {
         >
           {!sfxOn && (
             <span className="wood-btn-override">
-              <span className="override-icon">🔇</span>
+              <span className="override-icon">
+                <PixelUiIcon name="mute" />
+              </span>
               <span>音效 關</span>
             </span>
           )}
@@ -368,7 +373,9 @@ export default function App() {
         >
           {isFullscreen && (
             <span className="wood-btn-override">
-              <span className="override-icon">⛶</span>
+              <span className="override-icon">
+                <PixelUiIcon name="exitFs" />
+              </span>
               <span>退出全螢幕</span>
             </span>
           )}
@@ -384,7 +391,7 @@ export default function App() {
           }}
         />
 
-        {/* 頂部隱藏式快捷輔助工具列 (玩家 QR Code & BINGO 煙火，已隱藏語音報號) */}
+        {/* 頂部快捷輔助按鈕 (點陣方框鈕：掃碼領卡 & 喊 BINGO 慶祝) */}
         <div className="host-quick-pills" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"
@@ -395,7 +402,8 @@ export default function App() {
             }}
             title="展開大螢幕 QR Code 讓全場掃描領取專屬賓果卡 (快捷鍵 Q)"
           >
-            📱 掃碼領卡 (Q)
+            <PixelUiIcon name="phone" className="quick-pill-icon" />
+            <span>掃碼領卡 (Q)</span>
           </button>
           <button
             type="button"
@@ -406,7 +414,8 @@ export default function App() {
             }}
             title="有人喊賓果時點擊放煙火！(快捷鍵 B)"
           >
-            🎉 喊 BINGO 慶祝 (B)
+            <PixelUiIcon name="party" className="quick-pill-icon" />
+            <span>喊 BINGO 慶祝 (B)</span>
           </button>
         </div>
 
@@ -422,11 +431,11 @@ export default function App() {
           title="點擊可切換顯示聖誕吉祥話提示"
         >
           <div className="chalk-header">
-            <span className="chalk-star">✦</span>
+            <PixelSparkle className="chalk-star" />
             <span className="chalk-title-text">
               {isRolling ? '幸運開獎中' : activeNumber !== null ? '最新開出' : '準備開獎'}
             </span>
-            <span className="chalk-star">✦</span>
+            <PixelSparkle className="chalk-star" />
           </div>
 
           <div className="chalk-number-wrap">
@@ -477,12 +486,21 @@ export default function App() {
             />
             <span className="draw-btn-label">
               {isRolling ? (
-                <>開獎中... 🎲</>
+                <>
+                  <span>開獎中...</span>
+                  <PixelSparkle className="draw-rolling-sparkle" />
+                </>
               ) : isAllDrawn ? (
-                <>已全數開出 📋</>
+                <>
+                  <PixelUiIcon name="gift" className="draw-done-icon" />
+                  <span>已全數開出</span>
+                </>
               ) : (
                 <>
-                  抽下一號 <span className="draw-arrow">▶</span>
+                  <span>抽下一號</span>
+                  <span className="draw-arrow">
+                    <PixelUiIcon name="playArrow" className="draw-arrow-svg" />
+                  </span>
                 </>
               )}
             </span>
@@ -594,7 +612,10 @@ export default function App() {
         >
           <div className="pixel-modal-card confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pixel-modal-header">
-              <div className="pixel-modal-title">⚠️ 確定要重新開始嗎？</div>
+              <div className="pixel-modal-title">
+                <PixelUiIcon name="warn" className="modal-title-pixel-icon" />
+                <span>確定要重新開始嗎？</span>
+              </div>
             </div>
             <p className="confirm-modal-desc">
               {drawCount > 0 ? (
@@ -616,7 +637,8 @@ export default function App() {
                   onChange={(e) => setResetPhonesToo(e.target.checked)}
                   disabled={isResettingCloud}
                 />
-                <span>📱 同步重置所有玩家手機卡片與紅格進度（重發新一局卡片）</span>
+                <PixelUiIcon name="phone" className="modal-inline-pixel-icon" />
+                <span>同步重置所有玩家手機卡片與紅格進度（重發新一局卡片）</span>
               </label>
             )}
             <div className="confirm-modal-actions">
@@ -637,7 +659,7 @@ export default function App() {
                 disabled={isResettingCloud}
                 onClick={confirmReset}
               >
-                {isResettingCloud ? '⏳ 正在重置全場手機與雲端...' : '↻ 確定重新開始'}
+                {isResettingCloud ? '正在重置全場手機與雲端...' : '確定重新開始'}
               </button>
             </div>
           </div>

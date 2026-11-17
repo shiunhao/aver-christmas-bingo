@@ -1,4 +1,5 @@
 import React from 'react';
+import { PixelUiIcon, PixelCloseIcon } from './PixelOrnamentArt';
 
 const PRODUCTION_PLAYER_URL = 'https://shiunhao.github.io/aver-christmas-bingo/player.html';
 
@@ -28,10 +29,12 @@ export default function QrCodeModal({ isOpen, onClose }) {
       >
         <div className="pixel-modal-header">
           <div className="pixel-modal-title">
-            <span>📱 掃描 QR Code 領取賓果卡</span>
+            <PixelUiIcon name="phone" className="modal-title-pixel-icon" />
+            <span>掃描 QR Code 領取賓果卡</span>
           </div>
           <button className="pixel-close-btn" onClick={onClose} title="關閉 (ESC)">
-            ✕ 關閉
+            <PixelCloseIcon className="modal-close-pixel-svg" color="#fff6e8" />
+            <span>關閉</span>
           </button>
         </div>
 

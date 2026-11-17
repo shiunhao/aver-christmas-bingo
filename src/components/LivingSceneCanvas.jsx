@@ -773,17 +773,194 @@ export default function LivingSceneCanvas({
   );
 }
 
-function drawPixelBubble(ctx, cx, cy, text, bgColor, textColor) {
+const BUBBLE_PALETTE = {
+  '.': null,
+  K: '#2a1005',
+  W: '#fffdf7',
+  C: '#49b6ff',
+  B: '#2563eb',
+  R: '#e62429',
+  r: '#9e1116',
+  Y: '#ffd230',
+  y: '#e08e16',
+  G: '#2ea843',
+  g: '#185e24',
+  N: '#8c471b',
+  n: '#5c2c0e',
+  P: '#ffd1aa',
+};
+
+const BUBBLE_PIXEL_GRIDS = {
+  snow: [
+    '...C...',
+    '.C.C.C.',
+    '..CCC..',
+    'CCCBCCC',
+    '..CCC..',
+    '.C.C.C.',
+    '...C...',
+  ],
+  cup: [
+    '..W.W..',
+    '...W...',
+    '.KKKKK.',
+    'KRRRRKK',
+    'KRWWWRK',
+    'KRRRRK.',
+    '.KKKK..',
+  ],
+  tree: [
+    '...Y...',
+    '..KGY..',
+    '.KGGGK.',
+    'KGRGGgK',
+    'KGGGGRK',
+    '.KKKKK.',
+    '..KNK..',
+  ],
+  house: [
+    '...K...',
+    '..KRK..',
+    '.KRRRK.',
+    'KRRRRRK',
+    '.KNYNK.',
+    '.KNnNK.',
+    '.KKKKK.',
+  ],
+  music: [
+    '...KKKK',
+    '..KYYYK',
+    '..KY.KY',
+    '.KKY.KY',
+    'KYYKKYY',
+    'KYYK.YY',
+    '.KK..KK',
+  ],
+  fire: [
+    '...R...',
+    '..RYY..',
+    '.RYYYR.',
+    'RYYWYYR',
+    'RYYWWYR',
+    '.RYYYR.',
+    '..RRR..',
+  ],
+  star: [
+    '...Y...',
+    '..KYK..',
+    '.KYWYK.',
+    'KYWWWYK',
+    '.KYWYK.',
+    '..KYK..',
+    '...Y...',
+  ],
+  gift: [
+    '.KK.KK.',
+    '.KYYYK.',
+    'KRYRYRK',
+    'KKKKKKK',
+    'KRYRYRK',
+    'KRYRYRK',
+    'KKKKKKK',
+  ],
+  party: [
+    '....R.Y',
+    '..Y..G.',
+    '.KYK.R.',
+    'KYRYK..',
+    'KRRYK..',
+    'KRRK...',
+    '.KK....',
+  ],
+  santa: [
+    '.KKKK..',
+    'KRRRRWK',
+    'KWWWWWK',
+    'KPKPKPK',
+    'KPPRPPK',
+    'KWWWWWK',
+    '.KKKKK.',
+  ],
+  reindeer: [
+    'N.....N',
+    '.N...N.',
+    '.KNNNK.',
+    'KNKNKNK',
+    'KNNRNNK',
+    '.KNNNK.',
+    '..KKK..',
+  ],
+  drum: [
+    '.KY.YK.',
+    '.KKKKK.',
+    'KRYRYRK',
+    'KRRYRRK',
+    'KRYRYRK',
+    '.KKKKK.',
+    '.......',
+  ],
+};
+
+const BUBBLE_EMOJI_MAP = {
+  '❄️': 'snow',
+  '❄': 'snow',
+  '☕': 'cup',
+  '🎄': 'tree',
+  '🏠': 'house',
+  '🎵': 'music',
+  '🔥': 'fire',
+  '✨': 'star',
+  '🌟': 'star',
+  '🎁': 'gift',
+  '🎉': 'party',
+  '👏': 'party',
+  '🎅': 'santa',
+  '🦌': 'reindeer',
+  '👀': 'star',
+  '🥁': 'drum',
+  '🔄': 'star',
+};
+
+function parseBubbleText(rawText) {
+  for (const [emoji, iconKey] of Object.entries(BUBBLE_EMOJI_MAP)) {
+    if (rawText.startsWith(emoji)) {
+      return {
+        iconKey,
+        label: rawText.slice(emoji.length).trimStart(),
+      };
+    }
+  }
+  return { iconKey: null, label: rawText };
+}
+
+function drawBubblePixelIcon(ctx, iconKey, ox, oy) {
+  const grid = BUBBLE_PIXEL_GRIDS[iconKey];
+  if (!grid) return;
+  for (let r = 0; r < grid.length; r++) {
+    const row = grid[r];
+    for (let c = 0; c < row.length; c++) {
+      const col = BUBBLE_PALETTE[row[c]];
+      if (col) {
+        ctx.fillStyle = col;
+        ctx.fillRect(ox + c * 2, oy + r * 2, 2, 2);
+      }
+    }
+  }
+}
+
+function drawPixelBubble(ctx, cx, cy, rawText, bgColor, textColor) {
+  const { iconKey, label } = parseBubbleText(rawText);
   ctx.save();
-  ctx.font = 'bold 12px "Noto Sans TC", sans-serif';
-  const metrics = ctx.measureText(text);
-  const padX = 8;
-  const w = Math.ceil(metrics.width + padX * 2);
+  ctx.font = '12px "Cubic 11", monospace';
+  const metrics = ctx.measureText(label);
+  const iconSpace = iconKey ? 18 : 0;
+  const padX = 7;
+  const w = Math.ceil(metrics.width + iconSpace + padX * 2);
   const h = 22;
   const x = Math.round(cx - w / 2);
   const y = Math.round(cy - h);
 
-  ctx.fillStyle = 'rgba(30, 12, 4, 0.45)';
+  ctx.fillStyle = 'rgba(30, 12, 4, 0.48)';
   ctx.fillRect(x + 2, y + 2, w, h);
 
   ctx.fillStyle = '#3d1c08';
@@ -799,10 +976,14 @@ function drawPixelBubble(ctx, cx, cy, text, bgColor, textColor) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(cx - 2, y + h - 1, 4, 3);
 
+  if (iconKey) {
+    drawBubblePixelIcon(ctx, iconKey, x + padX, y + 4);
+  }
+
   ctx.fillStyle = textColor;
-  ctx.textAlign = 'center';
+  ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, cx, y + h / 2 + 1);
+  ctx.fillText(label, x + padX + iconSpace, y + h / 2 + 1);
   ctx.restore();
 }
 

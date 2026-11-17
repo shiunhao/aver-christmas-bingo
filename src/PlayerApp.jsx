@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import PlayerSnowCanvas from './components/PlayerSnowCanvas';
+import { PixelUiIcon, PixelSparkle } from './components/PixelOrnamentArt';
 import {
   getOrClaimPlayerCard,
   loadSavedMarks,
@@ -317,7 +318,8 @@ export default function PlayerApp() {
             onClick={toggleSfx}
             title="切換點選與連線音效"
           >
-            {sfxOn ? '🔊 音效' : '🔇 靜音'}
+            <PixelUiIcon name={sfxOn ? 'music' : 'mute'} className="player-pill-pixel-icon" />
+            <span>{sfxOn ? '音效' : '靜音'}</span>
           </button>
           {markedCount > 1 && (
             <button
@@ -349,12 +351,14 @@ export default function PlayerApp() {
         <div className="player-grid-zone">
           {loading ? (
             <div className="player-grid-loading">
-              <div className="loading-spinner">🎄</div>
+              <div className="loading-spinner">
+                <PixelUiIcon name="tree" className="player-loading-tree-svg" />
+              </div>
               <div>正在為您抽取專屬聖誕賓果卡...</div>
             </div>
           ) : errorMsg ? (
             <div className="player-grid-error">
-              <div>⚠️ {errorMsg}</div>
+              <div>[!] {errorMsg}</div>
             </div>
           ) : (
             card && (
@@ -472,14 +476,18 @@ export default function PlayerApp() {
           >
             <div className="line-celebration-badge">
               <div className="celebration-rays" />
-              <div className="celebration-stars-row">★ 🌟 ★</div>
+              <div className="celebration-stars-row">
+                <PixelSparkle className="celebration-pixel-star" />
+                <PixelUiIcon name="party" className="celebration-pixel-party" />
+                <PixelSparkle className="celebration-pixel-star" />
+              </div>
               <div className="celebration-main-title">
-                🎉 達成 {celebrationBanner.totalLines} 條連線！
+                達成 {celebrationBanner.totalLines} 條連線！
               </div>
               <div className="celebration-sub-desc">
                 成功連成【{celebrationBanner.lineNames}】
               </div>
-              <div className="celebration-hint">點擊任意處繼續對獎 ✨</div>
+              <div className="celebration-hint">✦ 點擊任意處繼續對獎 ✦</div>
             </div>
           </div>
         )}
@@ -490,13 +498,13 @@ export default function PlayerApp() {
             className="player-round-reset-toast"
             onClick={() => setRoundResetToast(false)}
           >
-            🔄 主持人已重新開局！已為您配發全新卡片 #{card?.cardNo}
+            ★ 主持人已重新開局！已為您配發全新卡片 #{card?.cardNo}
           </div>
         )}
 
         {/* 6. 底部雪地溫馨小叮嚀 */}
         <div className="player-bottom-footer">
-          <span>✨ 點選開出號碼標記紅星・重整網頁不會換卡 ✨</span>
+          <span>✦ 點選開出號碼標記紅星・重整網頁不會換卡 ✦</span>
         </div>
 
         {/* 6. 重新標記防誤觸確認小視窗 */}

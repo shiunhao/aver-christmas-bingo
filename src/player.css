@@ -1,6 +1,13 @@
 /* ==========================================================================
-   AVer 2026 聖誕幸運賓果 — 手機玩家端專屬像素視覺樣式 (448 x 1024 原始座標比例)
+   AVer 2026 聖誕幸運賓果 — 手機玩家端專屬 16-bit 點陣視覺樣式 (448 x 1024 原始座標比例)
    ========================================================================== */
+@font-face {
+  font-family: 'Cubic 11';
+  src: url('./assets/fonts/Cubic_11.woff2') format('woff2');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 * {
   box-sizing: border-box;
@@ -18,7 +25,13 @@ body,
   height: 100dvh;
   overflow: hidden;
   background: radial-gradient(circle at 50% 25%, #1d3c78 0%, #0d1b3e 60%, #070f24 100%);
-  font-family: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  font-family: 'Cubic 11', 'Press Start 2P', 'Noto Sans TC', monospace;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+}
+
+button {
+  font-family: inherit;
 }
 
 .player-viewport {
@@ -76,31 +89,45 @@ body,
 
 .player-tool-pill {
   appearance: none;
-  border: 1.5px solid rgba(255, 224, 140, 0.65);
-  background: rgba(18, 35, 72, 0.78);
+  border: 2px solid #ffd88a;
+  background: #14274f;
   color: #fff6d6;
   font-size: clamp(10px, 2.75cqw, 13px);
-  font-weight: 900;
-  padding: 0.7cqw 2.1cqw;
-  border-radius: 999px;
+  font-weight: 700;
+  padding: 0.7cqw 2cqw;
+  border-radius: 0;
   cursor: pointer;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  transition: transform 0.12s ease, background 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 1.2cqw;
+  text-shadow: 1px 1px 0 #091329;
+  box-shadow:
+    0 0 0 1.5px #091329,
+    2px 2px 0 #091329;
+  transition: transform 0.08s steps(2);
+}
+
+.player-pill-pixel-icon {
+  width: 3.1cqw;
+  height: 3.1cqw;
+  min-width: 11px;
+  min-height: 11px;
+  display: block;
+  image-rendering: pixelated;
 }
 
 .player-tool-pill:active {
-  transform: scale(0.93);
+  transform: scale(0.95);
 }
 
 .player-tool-pill.is-muted {
-  opacity: 0.72;
-  border-color: rgba(255, 255, 255, 0.35);
+  opacity: 0.78;
+  border-color: #a8b8d6;
 }
 
 .player-tool-pill.clear-pill {
-  background: rgba(112, 32, 32, 0.82);
-  border-color: rgba(255, 190, 140, 0.65);
+  background: #781c1e;
+  border-color: #ffc799;
 }
 
 /* ==========================================================================
@@ -202,48 +229,43 @@ body,
   pointer-events: none;
 }
 
-/* 格子上的號碼文字 */
+/* 格子上的號碼文字（採用方塊點陣數字體與硬邊立體字影） */
 .tile-number-label {
   position: relative;
   z-index: 2;
-  font-size: clamp(16px, 6.4cqw, 31px);
-  font-weight: 900;
+  font-family: 'Cubic 11', 'Press Start 2P', monospace;
+  font-size: clamp(16px, 6.2cqw, 30px);
+  font-weight: 700;
   line-height: 1;
   letter-spacing: -0.02em;
   transform: translateY(-2%);
   pointer-events: none;
 }
 
-/* 未選取狀態：溫暖深棕木刻字體 + 奶油白底光 */
+/* 未選取狀態：溫暖深棕木刻點陣字體 + 硬邊奶油白高光 */
 .player-tile-btn.is-unmarked .tile-number-label {
   color: #3d1d0c;
-  text-shadow:
-    0 1.5px 0 rgba(255, 248, 225, 0.95),
-    0 -0.5px 0 rgba(40, 15, 5, 0.25);
+  text-shadow: 0 1.5px 0 rgba(255, 248, 225, 0.95);
 }
 
-/* 已選取狀態：明亮奶油白字體 + 深紅立體陰影 */
+/* 已選取狀態：明亮奶油白字體 + 深紅硬邊陰影 */
 .player-tile-btn.is-marked .tile-number-label {
   color: #fff9eb;
-  text-shadow:
-    0 2px 0 #6e0d10,
-    0 0 8px rgba(255, 230, 140, 0.55);
+  text-shadow: 0 2px 0 #6e0d10;
 }
 
-/* 當該格屬於已完成連線時：浮現流光金框與呼吸星芒 */
+/* 當該格屬於已完成連線時：浮現像素金框 */
 .player-tile-btn.is-winning-cell {
   z-index: 4;
-  animation: winningTilePulse 1.8s ease-in-out infinite;
+  animation: winningTilePulse 1.2s steps(2, end) infinite;
 }
 
 .tile-winning-ring {
   position: absolute;
-  inset: -3%;
+  inset: -2%;
   border: 2.5px solid #ffe066;
-  border-radius: 14%;
-  box-shadow:
-    0 0 10px rgba(255, 215, 0, 0.9),
-    inset 0 0 8px rgba(255, 235, 130, 0.65);
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px #180703;
   pointer-events: none;
   z-index: 3;
 }
@@ -251,10 +273,10 @@ body,
 @keyframes winningTilePulse {
   0%,
   100% {
-    filter: brightness(1.02) drop-shadow(0 0 4px rgba(255, 215, 0, 0.55));
+    filter: brightness(1.02);
   }
   50% {
-    filter: brightness(1.16) drop-shadow(0 0 10px rgba(255, 225, 90, 0.95));
+    filter: brightness(1.16);
   }
 }
 
@@ -311,9 +333,19 @@ body,
 }
 
 .loading-spinner {
-  font-size: clamp(28px, 9cqw, 42px);
-  margin-bottom: 2cqw;
-  animation: treeBounce 1s ease-in-out infinite;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2.5cqw;
+  animation: treeBounce 0.9s steps(2, end) infinite;
+}
+
+.player-loading-tree-svg {
+  width: 11cqw;
+  height: 12cqw;
+  min-width: 34px;
+  min-height: 36px;
+  display: block;
+  image-rendering: pixelated;
 }
 
 @keyframes treeBounce {
@@ -347,12 +379,11 @@ body,
 
 .status-banner-text {
   color: #fff6e0;
+  font-family: 'Cubic 11', monospace;
   font-size: clamp(14px, 4.9cqw, 23px);
-  font-weight: 900;
+  font-weight: 700;
   letter-spacing: 0.05em;
-  text-shadow:
-    0 2px 0 #590a0c,
-    0 0 8px rgba(255, 210, 90, 0.35);
+  text-shadow: 2px 2px 0 #590a0c;
   display: flex;
   align-items: baseline;
   gap: 1.2cqw;
@@ -360,18 +391,17 @@ body,
 }
 
 .status-line-num {
+  font-family: 'Press Start 2P', 'Cubic 11', monospace;
   color: #ffe46b;
-  font-size: 1.22em;
-  font-weight: 900;
-  text-shadow:
-    0 2px 0 #590a0c,
-    0 0 12px rgba(255, 225, 80, 0.85);
+  font-size: 1.15em;
+  font-weight: 700;
+  text-shadow: 2px 2px 0 #590a0c;
   display: inline-block;
-  transition: transform 0.25s ease;
+  transition: transform 0.15s steps(2);
 }
 
 .player-status-banner-zone.has-lines .status-line-num {
-  animation: numHeartbeat 1.5s ease-in-out infinite;
+  animation: numHeartbeat 1s steps(2, end) infinite;
 }
 
 @keyframes numHeartbeat {
@@ -380,12 +410,12 @@ body,
     transform: scale(1);
   }
   50% {
-    transform: scale(1.18);
+    transform: scale(1.16);
   }
 }
 
 /* ==========================================================================
-   4. 完成連線時的華麗慶祝特效彈出徽章
+   4. 完成連線時的點陣慶祝徽章
    ========================================================================== */
 .line-celebration-overlay {
   position: absolute;
@@ -394,9 +424,8 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 16, 38, 0.42);
-  backdrop-filter: blur(2px);
-  animation: fadeInOverlay 0.2s ease-out;
+  background: rgba(8, 16, 38, 0.56);
+  animation: fadeInOverlay 0.15s steps(3, end);
   cursor: pointer;
 }
 
@@ -413,27 +442,22 @@ body,
   position: relative;
   width: 84%;
   padding: 5.5cqw 4.5cqw;
-  border-radius: 4.5cqw;
-  background: linear-gradient(180deg, #b81d24 0%, #7d0f14 100%);
+  border-radius: 0;
+  background: #8f1419;
   border: 3px solid #ffd86b;
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.75),
-    0 0 28px rgba(255, 215, 0, 0.75),
-    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+    0 0 0 3px #180703,
+    6px 6px 0 rgba(0, 0, 0, 0.72);
   text-align: center;
   color: #fff9e6;
   overflow: hidden;
-  animation: badgePopIn 0.42s cubic-bezier(0.22, 1.4, 0.36, 1);
+  animation: badgePopIn 0.3s steps(4, end);
 }
 
 @keyframes badgePopIn {
   0% {
-    transform: scale(0.55) translateY(24px);
+    transform: scale(0.6) translateY(20px);
     opacity: 0;
-  }
-  70% {
-    transform: scale(1.05) translateY(-4px);
-    opacity: 1;
   }
   100% {
     transform: scale(1) translateY(0);
@@ -446,7 +470,7 @@ body,
   inset: -60%;
   background: repeating-conic-gradient(
     from 0deg,
-    rgba(255, 220, 100, 0.14) 0deg 15deg,
+    rgba(255, 220, 100, 0.12) 0deg 15deg,
     transparent 15deg 30deg
   );
   animation: spinRays 12s linear infinite;
@@ -464,21 +488,37 @@ body,
 
 .celebration-stars-row {
   position: relative;
-  font-size: clamp(18px, 6.5cqw, 30px);
-  color: #ffe066;
-  letter-spacing: 0.2em;
-  margin-bottom: 1.5cqw;
-  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3cqw;
+  margin-bottom: 2cqw;
+}
+
+.celebration-pixel-star {
+  width: 5.5cqw;
+  height: 5.5cqw;
+  min-width: 18px;
+  min-height: 18px;
+  display: block;
+  image-rendering: pixelated;
+}
+
+.celebration-pixel-party {
+  width: 7.5cqw;
+  height: 7.5cqw;
+  min-width: 24px;
+  min-height: 24px;
+  display: block;
+  image-rendering: pixelated;
 }
 
 .celebration-main-title {
   position: relative;
   font-size: clamp(20px, 6.8cqw, 32px);
-  font-weight: 900;
+  font-weight: 700;
   color: #fff6d1;
-  text-shadow:
-    0 3px 0 #4a0609,
-    0 0 14px rgba(255, 215, 0, 0.85);
+  text-shadow: 2px 3px 0 #4a0609;
   margin-bottom: 1.8cqw;
 }
 
@@ -487,14 +527,14 @@ body,
   font-size: clamp(13px, 3.9cqw, 18px);
   font-weight: 700;
   color: #ffe799;
-  text-shadow: 0 1.5px 0 #4a0609;
+  text-shadow: 0 2px 0 #4a0609;
   margin-bottom: 2.5cqw;
 }
 
 .celebration-hint {
   position: relative;
   font-size: clamp(11px, 3.1cqw, 14px);
-  color: rgba(255, 245, 220, 0.85);
+  color: #fff5dc;
 }
 
 /* ==========================================================================
@@ -512,15 +552,14 @@ body,
 }
 
 .player-bottom-footer span {
-  background: rgba(12, 26, 56, 0.72);
-  border: 1px solid rgba(255, 230, 160, 0.45);
+  background: #0d1c3d;
+  border: 2px solid #ffd685;
   color: #fff4d2;
   font-size: clamp(10px, 2.75cqw, 13px);
   font-weight: 700;
-  padding: 0.8cqw 3.2cqw;
-  border-radius: 999px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  padding: 0.8cqw 3cqw;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #070e1f;
   white-space: nowrap;
 }
 
@@ -531,8 +570,7 @@ body,
   position: absolute;
   inset: 0;
   z-index: 40;
-  background: rgba(6, 14, 32, 0.72);
-  backdrop-filter: blur(3px);
+  background: rgba(6, 14, 32, 0.78);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -541,18 +579,20 @@ body,
 
 .player-confirm-box {
   width: 100%;
-  background: linear-gradient(180deg, #243b6b 0%, #152547 100%);
-  border: 2.5px solid #ffd166;
-  border-radius: 4cqw;
+  background: #1a2d57;
+  border: 3px solid #ffd166;
+  border-radius: 0;
   padding: 5cqw;
   color: #fff8e7;
   text-align: center;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.75);
+  box-shadow:
+    0 0 0 3px #091329,
+    6px 6px 0 rgba(0, 0, 0, 0.75);
 }
 
 .confirm-box-title {
   font-size: clamp(16px, 4.8cqw, 22px);
-  font-weight: 900;
+  font-weight: 700;
   color: #ffe066;
   margin-bottom: 2.5cqw;
 }
@@ -574,21 +614,22 @@ body,
 .confirm-btn-ok {
   flex: 1;
   padding: 2.4cqw 3cqw;
-  border-radius: 2.2cqw;
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #091329;
   font-size: clamp(13px, 3.7cqw, 16px);
-  font-weight: 900;
+  font-weight: 700;
   cursor: pointer;
   border: 2px solid transparent;
 }
 
 .confirm-btn-cancel {
-  background: rgba(255, 255, 255, 0.14);
+  background: #2f487a;
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: #a8c2f0;
 }
 
 .confirm-btn-ok {
-  background: linear-gradient(180deg, #e63946 0%, #b81d24 100%);
+  background: #c9222a;
   color: #fff9e6;
   border-color: #ffd166;
 }
@@ -602,15 +643,17 @@ body,
   z-index: 35;
   width: 88%;
   text-align: center;
-  background: linear-gradient(180deg, #215e32 0%, #143f20 100%);
-  border: 2px solid #ffe066;
+  background: #1b4f28;
+  border: 2.5px solid #ffe066;
   color: #fff9e6;
   padding: 2.2cqw 3.2cqw;
-  border-radius: 3cqw;
+  border-radius: 0;
   font-size: clamp(12px, 3.4cqw, 16px);
-  font-weight: 900;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.72), 0 0 16px rgba(255, 215, 0, 0.55);
-  animation: roundToastPop 0.35s cubic-bezier(0.22, 1.4, 0.36, 1);
+  font-weight: 700;
+  box-shadow:
+    0 0 0 2px #091329,
+    4px 4px 0 rgba(0, 0, 0, 0.72);
+  animation: roundToastPop 0.28s steps(3, end);
   cursor: pointer;
 }
 

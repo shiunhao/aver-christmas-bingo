@@ -3,6 +3,7 @@ import { getBingoLetter, getNumberPhrase } from '../utils/christmasPhrases';
 import { verifyCardWithDrawnNumbers } from '../utils/bingoEngine';
 import { loadCardsPool } from '../services/cardClaimService';
 import { soundEngine } from '../utils/soundEngine';
+import { PixelUiIcon, PixelCloseIcon } from './PixelOrnamentArt';
 
 const BINGO_ROWS = [
   { letter: 'B', label: '1 ~ 15', color: '#e63946', range: Array.from({ length: 15 }, (_, i) => i + 1) },
@@ -116,13 +117,15 @@ export default function HistoryModal({
         {/* 頂部木牌標題列 */}
         <div className="pixel-modal-header">
           <div className="pixel-modal-title">
-            <span>🎄 AVer 聖誕幸運賓果 — 已開號碼總覽與官方驗獎盤面</span>
+            <PixelUiIcon name="tree" className="modal-title-pixel-icon" />
+            <span>AVer 聖誕幸運賓果 — 已開號碼總覽與官方驗獎盤面</span>
             <span className="pixel-badge">
               已開出 {drawnNumbers.length} / 75 號（剩餘 {75 - drawnNumbers.length} 號）
             </span>
           </div>
           <button className="pixel-close-btn" onClick={onClose} title="關閉 (ESC)">
-            ✕ 關閉
+            <PixelCloseIcon className="modal-close-pixel-svg" color="#fff6e8" />
+            <span>關閉</span>
           </button>
         </div>
 
@@ -130,7 +133,7 @@ export default function HistoryModal({
         <div className="verify-bar">
           <div className="card-verify-input-group">
             <label htmlFor="card-no-verify-input" className="card-verify-label">
-              🔍 報卡號 3 秒驗獎：
+              報卡號 3 秒驗獎：
             </label>
             <input
               id="card-no-verify-input"
@@ -157,10 +160,10 @@ export default function HistoryModal({
 
           <div className="verify-info">
             {verifyError ? (
-              <span className="verify-fail">⚠️ {verifyError}</span>
+              <span className="verify-fail">[!] {verifyError}</span>
             ) : verifiedResult ? (
               <span className={verifiedResult.lineCount > 0 ? 'verify-pass' : ''}>
-                🎯 <strong>卡片編號 {verifiedResult.card.cardNo}</strong>：目前已開出{' '}
+                ★ <strong>卡片編號 {verifiedResult.card.cardNo}</strong>：目前已開出{' '}
                 <strong>{verifiedResult.officialMarked.filter(Boolean).length}</strong> 格（含 FREE），
                 實際達成{' '}
                 <strong style={{ color: '#ffd166', fontSize: '1.15em' }}>
@@ -170,16 +173,16 @@ export default function HistoryModal({
               </span>
             ) : selectedForCheck.length === 0 ? (
               <span>
-                💡 可直接輸入同仁的 <strong>4 碼卡片編號</strong> 自動比對連線，或點擊下方號碼核對！
+                可直接輸入同仁的 <strong>4 碼卡片編號</strong> 自動比對連線，或點擊下方號碼核對！
               </span>
             ) : allSelectedAreDrawn ? (
               <span className="verify-pass">
-                ✅ 核對通過！所選的 {selectedForCheck.length} 個號碼（
+                [✓] 核對通過！所選的 {selectedForCheck.length} 個號碼（
                 {selectedForCheck.join('、')}）<strong>全部皆已開出！</strong>
               </span>
             ) : (
               <span className="verify-fail">
-                ⚠️ 注意！所選號碼中，【<strong>{missingNumbers.join('、')}</strong>】尚未開出喔！
+                [!] 注意！所選號碼中，【<strong>{missingNumbers.join('、')}</strong>】尚未開出喔！
               </span>
             )}
           </div>
@@ -196,7 +199,7 @@ export default function HistoryModal({
               onClick={handleExportJson}
               title="匯出目前已開出的號碼順序紀錄 JSON"
             >
-              📥 匯出紀錄
+              匯出紀錄 JSON
             </button>
             <button
               className="pixel-mini-btn celebrate-btn"
@@ -205,7 +208,8 @@ export default function HistoryModal({
                 onTriggerBingo();
               }}
             >
-              🎉 有人 BINGO！放煙火慶祝
+              <PixelUiIcon name="party" className="btn-inline-pixel-icon" />
+              <span>有人 BINGO！放煙火慶祝</span>
             </button>
           </div>
         </div>

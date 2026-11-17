@@ -325,3 +325,217 @@ export function PixelCloseIcon({ className = 'pixel-close-svg', color = '#ffe5b0
     />
   );
 }
+
+/** 通用點陣色票與字元矩陣轉 RLE 矩形解析器（供 UI 迷你像素圖示共用） */
+const UI_ICON_PALETTE = {
+  '.': null,
+  K: '#180703', // 深黑咖啡外邊
+  W: '#fff8ea', // 暖白
+  w: '#d9ccb4', // 淡灰白
+  C: '#7be3ff', // 螢幕/青藍亮色
+  B: '#3388d9', // 深藍
+  Y: '#ffe459', // 亮金黃
+  y: '#e09a1d', // 暖橘金
+  R: '#f53b31', // 聖誕亮紅
+  r: '#a61614', // 聖誕暗紅
+  G: '#3ab84d', // 翠綠
+  g: '#1a6128', // 暗綠
+  N: '#8f471d', // 木頭棕
+};
+
+function compilePixelGrid(grid) {
+  const rects = [];
+  for (let y = 0; y < grid.length; y++) {
+    const row = grid[y];
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      const fill = UI_ICON_PALETTE[ch];
+      if (!fill) {
+        x++;
+        continue;
+      }
+      let x2 = x + 1;
+      while (x2 < row.length && row[x2] === ch) x2++;
+      rects.push([x, y, x2 - x, 1, fill]);
+      x = x2;
+    }
+  }
+  return rects;
+}
+
+const UI_ICON_SPECS = {
+  phone: {
+    viewBox: '0 0 9 12',
+    rects: compilePixelGrid([
+      '.KKKKKKK.',
+      'KWBBBBBWK',
+      'KWCWCWCWK',
+      'KWCCWCCWK',
+      'KWCWCWCWK',
+      'KWBWWWBWK',
+      'KWCWCWCWK',
+      'KWCCWCCWK',
+      'KWWWWWWWK',
+      'KWwwKwwWK',
+      '.KKKKKKK.',
+      '.........',
+    ]),
+  },
+  party: {
+    viewBox: '0 0 12 12',
+    rects: compilePixelGrid([
+      '......Y..R..',
+      '....Y...G...',
+      '.....R..Y.C.',
+      '..KK..C..Y..',
+      '.KYYK...R...',
+      '.KYRYK......',
+      'KYRYRYK.....',
+      'KRRYRYK.....',
+      'KRRYYK......',
+      'KRRKK.......',
+      '.KK.........',
+      '............',
+    ]),
+  },
+  music: {
+    viewBox: '0 0 10 10',
+    rects: compilePixelGrid([
+      '....KKKKK.',
+      '...KYYYYYK',
+      '...KYKKKYK',
+      '...KYK..YK',
+      '.KKKYK.KYK',
+      'KYYKYKKYYK',
+      'KYYKK.KYYK',
+      '.KK....KK.',
+      '..........',
+      '..........',
+    ]),
+  },
+  mute: {
+    viewBox: '0 0 11 10',
+    rects: compilePixelGrid([
+      '....KK.....',
+      '...KWWK....',
+      '.KKKWWK.R.R',
+      'KwwKWWK..R.',
+      'KwwKWWK.R.R',
+      'KwwKWWK....',
+      '.KKKWWK....',
+      '...KWWK....',
+      '....KK.....',
+      '...........',
+    ]),
+  },
+  exitFs: {
+    viewBox: '0 0 10 10',
+    rects: compilePixelGrid([
+      '.W......W.',
+      '..WW..WW..',
+      '.WW....WW.',
+      '..........',
+      '..........',
+      '.WW....WW.',
+      '..WW..WW..',
+      '.W......W.',
+      '..........',
+      '..........',
+    ]),
+  },
+  playArrow: {
+    viewBox: '0 0 6 9',
+    rects: compilePixelGrid([
+      'KW....',
+      'KWW...',
+      'KWWW..',
+      'KWWWW.',
+      'KWWWWW',
+      'KWWWW.',
+      'KWWW..',
+      'KWW...',
+      'KW....',
+    ]),
+  },
+  tree: {
+    viewBox: '0 0 11 12',
+    rects: compilePixelGrid([
+      '....KYK....',
+      '...KYWYK...',
+      '....KGK....',
+      '...KGGGK...',
+      '..KGRGGgK..',
+      '.KGGGGGGgK.',
+      '..KGGYGGK..',
+      '.KGGGGGGgK.',
+      'KGRGGGGGRgK',
+      '.KKKKKKKKK.',
+      '....KNK....',
+      '....KKK....',
+    ]),
+  },
+  gift: {
+    viewBox: '0 0 11 11',
+    rects: compilePixelGrid([
+      '..KK...KK..',
+      '.KYYK.KYYK.',
+      '.KKYKKKYKK.',
+      'KRRRYRYRRRK',
+      'KRRYRYRYRRK',
+      'KKKKKKKKKKK',
+      '.KRRYRYRRK.',
+      '.KRRYRYRRK.',
+      '.KrrYrYrrK.',
+      '.KKKKKKKKK.',
+      '...........',
+    ]),
+  },
+  trophy: {
+    viewBox: '0 0 12 12',
+    rects: compilePixelGrid([
+      '..KKKKKKKK..',
+      'KKYYYYYYYYKK',
+      'KYKYYWWYYKYK',
+      'KYKYYYYYYKYK',
+      '.KKYYYYYYKK.',
+      '...KYYYYK...',
+      '....KYYK....',
+      '....KyyK....',
+      '...KYYYYK...',
+      '..KKKKKKKK..',
+      '............',
+      '............',
+    ]),
+  },
+  warn: {
+    viewBox: '0 0 11 10',
+    rects: compilePixelGrid([
+      '....KKK....',
+      '...KYYYK...',
+      '..KYYKYYK..',
+      '..KYYKYYK..',
+      '.KYYYKYYYK.',
+      '.KYYYYYYYK.',
+      'KYYYYKYYYYK',
+      'KYYYYYYYYYK',
+      '.KKKKKKKKK.',
+      '...........',
+    ]),
+  },
+  reindeer: {
+    viewBox: '0 0 16 14',
+    rects: MINI_REINDEER_RECTS,
+  },
+  santa: {
+    viewBox: '0 0 16 16',
+    rects: MINI_SANTA_RECTS,
+  },
+};
+
+/** 通用點陣 UI 圖示元件（取代各按鈕與彈窗上的系統 Emoji） */
+export function PixelUiIcon({ name, className = 'pixel-ui-icon-svg' }) {
+  const spec = UI_ICON_SPECS[name];
+  if (!spec) return null;
+  return <PixelSpriteSvg viewBox={spec.viewBox} rects={spec.rects} className={className} />;
+}

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import { PixelUiIcon, PixelSparkle } from './PixelOrnamentArt';
 
 export default function BingoCelebrationModal({ isOpen, onClose, drawnCount, latestNum }) {
   useEffect(() => {
@@ -37,22 +38,31 @@ export default function BingoCelebrationModal({ isOpen, onClose, drawnCount, lat
   return (
     <div className="pixel-modal-backdrop celebration-backdrop" onClick={onClose}>
       <div className="pixel-modal-card bingo-win-card" onClick={(e) => e.stopPropagation()}>
-        <div className="bingo-win-ribbon">🎄 MERRY CHRISTMAS & HAPPY BINGO 🎄</div>
-        <h2 className="bingo-win-title">🎉 BINGO！恭喜連線中獎！ 🎉</h2>
+        <div className="bingo-win-ribbon">
+          <PixelUiIcon name="tree" className="ribbon-pixel-icon" />
+          <span>MERRY CHRISTMAS &amp; HAPPY BINGO</span>
+          <PixelUiIcon name="tree" className="ribbon-pixel-icon" />
+        </div>
+        <h2 className="bingo-win-title">
+          <PixelSparkle className="win-title-star" />
+          <span>BINGO！恭喜連線中獎！</span>
+          <PixelSparkle className="win-title-star" />
+        </h2>
         <p className="bingo-win-subtitle">
           在第 <strong>{drawnCount}</strong> 次開獎（最新號碼：
           <strong>{latestNum ?? '--'}</strong>）誕生幸運得主！
         </p>
         <div className="bingo-win-gifts">
-          <span>🎁</span>
-          <span>🎅</span>
-          <span>🏆</span>
-          <span>🦌</span>
-          <span>🎄</span>
+          <PixelUiIcon name="gift" className="win-gift-pixel" />
+          <PixelUiIcon name="santa" className="win-gift-pixel" />
+          <PixelUiIcon name="trophy" className="win-gift-pixel" />
+          <PixelUiIcon name="reindeer" className="win-gift-pixel" />
+          <PixelUiIcon name="tree" className="win-gift-pixel" />
         </div>
         <div className="bingo-win-actions">
           <button className="pixel-primary-btn" onClick={onClose}>
-            繼續抽號 / 返回木屋 ▶
+            <span>繼續抽號 / 返回木屋</span>
+            <PixelUiIcon name="playArrow" className="btn-inline-pixel-arrow" />
           </button>
         </div>
       </div>
