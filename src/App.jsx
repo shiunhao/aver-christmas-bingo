@@ -303,7 +303,7 @@ export default function App() {
       <div className="stage-container">
         {/* 底層：無字乾淨背景圖 (已清除黑板字、羊皮紙字、按鈕殘影與靜態假雪點) */}
         <img
-          src="./assets/scene_clean.png"
+          src="./assets/scene_clean.png?v=4"
           alt="AVer 聖誕幸運賓果場景"
           className="scene-layer base-scene-img"
           draggable={false}
@@ -410,7 +410,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* 2. 中央黑板顯示區 (座標 x=384..617, y=189..352) */}
+        {/* 2. 中央黑板顯示區 (座標 x=384..617, y=199..362) */}
         <div
           className={`chalkboard-zone ${isRolling ? 'rolling' : ''} ${
             justRevealed ? 'revealed' : ''
@@ -470,7 +470,7 @@ export default function App() {
             disabled={isRolling}
           >
             <img
-              src="./assets/btn_draw_blank.png"
+              src="./assets/btn_draw_blank.png?v=3"
               alt=""
               className="draw-btn-bg"
               draggable={false}

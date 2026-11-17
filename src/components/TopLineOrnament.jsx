@@ -2,6 +2,15 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { loadCardsPool, subscribeClaimedCards } from '../services/cardClaimService';
 import { evaluateBingoCard, verifyCardAgainstDrawnNumbers } from '../utils/bingoEngine';
 import { soundEngine } from '../utils/soundEngine';
+import {
+  PixelPlaqueBg,
+  PixelTopGarland,
+  PixelTwinBells,
+  PixelFlame,
+  PixelTierBadge,
+  PixelSparkle,
+  PixelCloseIcon,
+} from './PixelOrnamentArt';
 
 export default function TopLineOrnament({
   drawnNumbers,
@@ -197,57 +206,21 @@ export default function TopLineOrnament({
         }}
         title="點擊查看最高連線數的卡片編號"
       >
-        {/* 頂部松枝與紅絲帶蝴蝶結裝飾 */}
+        {/* 16-bit 點陣切角木框底板 */}
+        <PixelPlaqueBg tierClass={tierInfo.tierClass} />
+
+        {/* 頂部點陣松枝與粉紅蝴蝶結裝飾 */}
         <div className="ornament-holly-garland" aria-hidden="true">
-          <span className="holly-leaf left" />
-          <span className="holly-ribbon-bow">🎀</span>
-          <span className="holly-leaf right" />
+          <PixelTopGarland />
         </div>
 
-        {/* 左側搖擺的聖誕雙金鈴鐺 + 節慶角色圖示 */}
+        {/* 左側搖擺的點陣聖誕雙金鈴鐺 + 節慶像素徽章 */}
         <div className="ornament-bell-cluster">
-          <svg
-            viewBox="0 0 64 64"
-            className="xmas-twin-bells-svg"
-            aria-hidden="true"
-          >
-            {/* 松針襯底 */}
-            <path
-              d="M12 22 C4 16, 4 28, 16 26 M52 22 C60 16, 60 28, 48 26"
-              stroke="#2e8b57"
-              strokeWidth="5"
-              strokeLinecap="round"
-              fill="none"
-            />
-            {/* 左金鈴鐺 */}
-            <g className="svg-bell-left">
-              <path
-                d="M18 24 C12 24, 9 34, 6 44 L30 44 C27 34, 24 24, 18 24 Z"
-                fill="#ffd147"
-                stroke="#7a4408"
-                strokeWidth="2.5"
-              />
-              <circle cx="18" cy="46" r="4" fill="#d97706" stroke="#7a4408" strokeWidth="2" />
-              <path d="M14 29 Q18 27 22 29" stroke="#fff5c0" strokeWidth="2.5" fill="none" />
-            </g>
-            {/* 右金鈴鐺 */}
-            <g className="svg-bell-right">
-              <path
-                d="M44 22 C38 22, 35 32, 32 42 L56 42 C53 32, 50 22, 44 22 Z"
-                fill="#ffdf6b"
-                stroke="#7a4408"
-                strokeWidth="2.5"
-              />
-              <circle cx="44" cy="44" r="4" fill="#d97706" stroke="#7a4408" strokeWidth="2" />
-              <path d="M40 27 Q44 25 48 27" stroke="#fff9d6" strokeWidth="2.5" fill="none" />
-            </g>
-            {/* 頂部紅果實與蝴蝶結 */}
-            <circle cx="28" cy="18" r="4.5" fill="#e63946" stroke="#6b0f16" strokeWidth="1.8" />
-            <circle cx="36" cy="18" r="4.5" fill="#e63946" stroke="#6b0f16" strokeWidth="1.8" />
-            <circle cx="32" cy="14" r="4.5" fill="#ff4d5a" stroke="#6b0f16" strokeWidth="1.8" />
-          </svg>
+          <PixelTwinBells />
           {stats.maxLines >= 2 && (
-            <span className="ornament-char-badge">{tierInfo.characterEmoji}</span>
+            <span className="ornament-char-badge">
+              <PixelTierBadge tierClass={tierInfo.tierClass} />
+            </span>
           )}
         </div>
 
@@ -261,19 +234,25 @@ export default function TopLineOrnament({
               <>
                 最高 <strong className="ornament-line-num">{stats.maxLines}</strong> 條線
               </>
+            ) : stats.almostCount > 0 ? (
+              <span className="ornament-zero-text is-almost">
+                <PixelFlame />
+                <strong className="ornament-line-num">{stats.almostCount}</strong>
+                <span>張卡聽牌中</span>
+              </span>
             ) : (
               <span className="ornament-zero-text">{tierInfo.mainText}</span>
             )}
           </div>
         </div>
 
-        {/* 環繞閃耀星芒粒子（當有連線或搖鈴時浮現） */}
+        {/* 環繞閃耀點陣星芒粒子（當有連線或搖鈴時浮現） */}
         {stats.maxLines > 0 && (
           <div className="ornament-sparkles" aria-hidden="true">
-            <span className="sp-star s1">✦</span>
-            <span className="sp-star s2">★</span>
-            <span className="sp-star s3">❄</span>
-            <span className="sp-star s4">✦</span>
+            <PixelSparkle className="sp-star s1" />
+            <PixelSparkle className="sp-star s2" />
+            <PixelSparkle className="sp-star s3" />
+            <PixelSparkle className="sp-star s4" />
           </div>
         )}
       </button>
@@ -281,9 +260,11 @@ export default function TopLineOrnament({
       {/* 當突破最高連線數時自動彈出的紅金慶祝彩帶 */}
       {breakthroughToast && (
         <div className="ornament-breakthrough-ribbon" key={breakthroughToast.id}>
-          <span className="ribbon-icon">{tierInfo.characterEmoji}</span>
+          <span className="ribbon-icon">
+            <PixelTierBadge tierClass={tierInfo.tierClass} />
+          </span>
           <span>
-            戰況升級！現場已達成 <strong>{breakthroughToast.lines} 條連線</strong>！
+            戰況升級！現場已達成 <strong className="ribbon-num">{breakthroughToast.lines}</strong> 條連線！
           </span>
         </div>
       )}
@@ -301,8 +282,9 @@ export default function TopLineOrnament({
               type="button"
               className="popover-close"
               onClick={() => setShowDropdown(false)}
+              aria-label="關閉卡片列表"
             >
-              ✕
+              <PixelCloseIcon />
             </button>
           </div>
 

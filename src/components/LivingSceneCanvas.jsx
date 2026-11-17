@@ -9,6 +9,7 @@ import React, { useEffect, useRef } from 'react';
  * 4. 壁爐像素火焰緩緩燃燒 + 火星飄散 + 室內暖光呼吸映照
  * 5. 三杯熱可可冉冉上升的像素白煙 (即時跟隨三位角色手中馬克杯的高低起落與移動位置！)
  * 6. 壁爐台蠟燭搖曳、提燈呼吸光、聖誕樹與壁爐松枝燈串交錯星芒閃爍
+ * 7. 木頭圓凳上的聖誕帽 AVer PTZ 攝影機即時雲台鏡頭水平左右擺動動畫
  */
 
 const MANTEL_LIGHTS = [
@@ -170,6 +171,18 @@ export default function LivingSceneCanvas({
     boy1Sprites.talk.src = './assets/boy1_talk.png';
     boy1Sprites.handDown.src = './assets/boy1_hand_down.png';
     boy1Sprites.drink.src = './assets/boy1_drink.png';
+
+    // 4. 載入木頭圓凳與聖誕帽 AVer PTZ 攝影機 11 幀水平擺頭精靈列（-32° ~ +32° Yaw）
+    const camSprites = {
+      stool: new Image(),
+      panSheet: new Image()
+    };
+    camSprites.stool.src = './assets/wood_stool.png?v=1';
+    camSprites.panSheet.src = './assets/aver_cam_pan_sheet.png?v=1';
+
+    const camState = {
+      pan: 0
+    };
 
     // 窗邊男生的走動與全身轉身賞雪狀態機
     const walker = {
@@ -475,6 +488,9 @@ export default function LivingSceneCanvas({
         walker.facing === -1 ? drawBoyX + (96 - 80) : drawBoyX + 80;
       const boyMugY = drawBoyY + 48;
 
+      // (2B-2) 繪製放置於「抽下一號」按鈕旁木頭圓凳上的 AVer PTZ 攝影機（含即時雲台左右甩頭動畫）
+      drawPtzCameraOnStool(fCtx, camSprites, camState, now, rolling, revealed);
+
       // (2C) 計算爐火緩慢呼吸強度 (移除快閃，改以約 7~8 秒為周期的平緩呼吸起伏)
       const slowWave = Math.sin(now * 0.00075) * 0.5 + 0.5;
       const gentleWave = Math.sin(now * 0.0015 + 1.4) * 0.5 + 0.5;
@@ -742,7 +758,7 @@ export default function LivingSceneCanvas({
         className="scene-layer snow-canvas"
       />
       <img
-        src="./assets/window_fg.png"
+        src="./assets/window_fg.png?v=4"
         alt=""
         className="scene-layer window-fg-mask"
         draggable={false}
@@ -788,4 +804,90 @@ function drawPixelBubble(ctx, cx, cy, text, bgColor, textColor) {
   ctx.textBaseline = 'middle';
   ctx.fillText(text, cx, y + h / 2 + 1);
   ctx.restore();
+}
+
+/**
+ * 繪製放置在四腳暖木頭圓凳上的 AVer 聖誕帽 PTZ 攝影機，並依遊戲開獎狀態驅動鏡頭水平左右擺動（Yaw）：
+ * - 待機：悠閒左右掃視會場（鏡頭左轉看黑板 ⇄ 正視觀眾 ⇄ 右轉看窗邊）
+ * - 開獎滾動中：流暢快速左右擺動鏡頭搜尋大獎
+ * - 開獎定格：轉向左方注目黑板開獎數字並亮起頂部錄影紅燈
+ */
+function drawPtzCameraOnStool(ctx, camSprites, camState, now, rolling, revealed) {
+  const STOOL_X = 630;
+  const STOOL_Y = 454;
+  const CAM_X = 627;
+  const CAM_Y = 392;
+  const FRAME_W = 70;
+  const FRAME_H = 74;
+  const MAX_FRAME = 10;
+  const YAW_ANGLES_DEG = [-32, -26, -19, -13, -6, 0, 6, 13, 19, 26, 32];
+
+  // 1. 計算鏡頭目標水平轉向角 panTarget（-1.0 極左看黑板 ~ +1.0 極右看窗外）
+  let panTarget = 0;
+  if (rolling) {
+    panTarget = Math.sin(now * 0.0085);
+  } else if (revealed) {
+    panTarget = -1.0;
+  } else {
+    // 待機 ~5.2 秒週期：平滑左右轉動鏡頭掃視並略微停看
+    const cycle = (now % 5200) / 5200;
+    if (cycle < 0.22) {
+      panTarget = -Math.sin((cycle / 0.22) * (Math.PI / 2));
+    } else if (cycle < 0.38) {
+      panTarget = -1.0;
+    } else if (cycle < 0.62) {
+      panTarget = -1.0 + 2.0 * Math.sin(((cycle - 0.38) / 0.24) * (Math.PI / 2));
+    } else if (cycle < 0.78) {
+      panTarget = 1.0;
+    } else {
+      panTarget = 1.0 - (cycle - 0.78) / 0.22;
+    }
+  }
+
+  const lerpRate = rolling ? 0.24 : revealed ? 0.16 : 0.11;
+  camState.pan += (panTarget - camState.pan) * lerpRate;
+  const clampedPan = Math.max(-1, Math.min(1, camState.pan));
+  const frameIdx = Math.round(((clampedPan + 1) / 2) * MAX_FRAME);
+
+  // 2. 先繪製四腳木頭圓凳
+  const { stool, panSheet } = camSprites;
+  if (stool.complete && stool.naturalWidth > 0) {
+    ctx.drawImage(stool, STOOL_X, STOOL_Y);
+  }
+
+  // 3. 繪製對應水平轉角的 PTZ 攝影機雲台影格（底座固定於凳面，僅鏡頭與雲台真實左右轉動）
+  if (panSheet.complete && panSheet.naturalWidth > 0) {
+    ctx.drawImage(
+      panSheet,
+      frameIdx * FRAME_W,
+      0,
+      FRAME_W,
+      FRAME_H,
+      CAM_X,
+      CAM_Y,
+      FRAME_W,
+      FRAME_H
+    );
+
+    // 底座右下藍色電源指示燈呼吸光點（位置固定不動）
+    const ledPulse = rolling
+      ? (Math.sin(now * 0.025) > 0 ? 0.72 : 0.18)
+      : revealed
+      ? 0.58
+      : 0.22 + 0.18 * Math.sin(now * 0.0035);
+    ctx.save();
+    ctx.fillStyle = `rgba(110, 225, 255, ${ledPulse.toFixed(2)})`;
+    ctx.fillRect(CAM_X + 45, CAM_Y + 61, 4, 2);
+
+    // 抽獎與開獎注目時，依鏡頭當前水平轉向角度同步定位並點亮頂部紅色 Live Tally 燈
+    if (rolling || revealed) {
+      const yawRad = (YAW_ANGLES_DEG[frameIdx] * Math.PI) / 180;
+      const tallyX = Math.round(CAM_X + 30 + Math.sin(yawRad) * 14.5);
+      const tallyY = CAM_Y + 13;
+      const recAlpha = rolling ? (Math.sin(now * 0.02) > 0 ? 0.92 : 0.3) : 0.96;
+      ctx.fillStyle = `rgba(255, 72, 72, ${recAlpha.toFixed(2)})`;
+      ctx.fillRect(tallyX, tallyY, 4, 2);
+    }
+    ctx.restore();
+  }
 }
