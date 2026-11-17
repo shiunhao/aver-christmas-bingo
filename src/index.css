@@ -393,24 +393,25 @@ textarea {
 .chalk-phrase-badge {
   --px: calc(var(--u) * 0.16);
   position: absolute;
-  bottom: calc(var(--u) * -2.35);
+  bottom: calc(var(--u) * -1.95);
   left: 50%;
   transform: translateX(-50%);
+  z-index: 12;
   white-space: nowrap;
-  background: #331406;
+  background: #471807;
   border: none;
   border-radius: 0;
-  color: #ffeaad;
+  color: #fff4be;
   font-family: 'Cubic 11', monospace;
-  font-size: calc(var(--u) * 1.12);
+  font-size: calc(var(--u) * 1.15);
   font-weight: 700;
-  padding: calc(var(--u) * 0.24) calc(var(--u) * 0.78);
+  padding: calc(var(--u) * 0.24) calc(var(--u) * 0.82);
   text-shadow: calc(var(--u) * 0.14) calc(var(--u) * 0.14) 0 #180703;
   box-shadow:
-    0 calc(var(--px) * -1) 0 0 #e6a85c,
-    0 var(--px) 0 0 #8a4014,
-    calc(var(--px) * -1) 0 0 0 #d4883f,
-    var(--px) 0 0 0 #8a4014,
+    0 calc(var(--px) * -1) 0 0 #f2b763,
+    0 var(--px) 0 0 #8f4215,
+    calc(var(--px) * -1) 0 0 0 #de9245,
+    var(--px) 0 0 0 #8f4215,
     calc(var(--px) * -1) calc(var(--px) * -1) 0 0 #180703,
     var(--px) calc(var(--px) * -1) 0 0 #180703,
     calc(var(--px) * -1) var(--px) 0 0 #180703,
@@ -419,19 +420,17 @@ textarea {
     0 calc(var(--px) * 2) 0 0 #180703,
     calc(var(--px) * -2) 0 0 0 #180703,
     calc(var(--px) * 2) 0 0 0 #180703,
-    var(--px) calc(var(--px) * 3) 0 0 rgba(12, 3, 1, 0.72),
-    0 calc(var(--px) * 3) 0 0 rgba(12, 3, 1, 0.72);
+    var(--px) calc(var(--px) * 3) 0 0 rgba(12, 3, 1, 0.78),
+    0 calc(var(--px) * 3) 0 0 rgba(12, 3, 1, 0.78);
   pointer-events: none;
-  animation: fadeSlideUp 0.24s steps(3, end);
+  animation: fadeSlideUp 0.16s steps(2, end);
 }
 
 @keyframes fadeSlideUp {
   from {
-    opacity: 0;
     transform: translate(-50%, 4px);
   }
   to {
-    opacity: 1;
     transform: translate(-50%, 0);
   }
 }
